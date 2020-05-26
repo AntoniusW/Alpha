@@ -217,8 +217,10 @@ public class ChoiceInfluenceManager implements Checkable {
 				changed = true;
 				LOGGER.debug("Deactivating choice point for atom {}", this.atom);
 			}
-			if (changed && activityListener != null) {
-				activityListener.callbackOnChanged(atom, isActive);
+			if (changed
+				//&& isActive // FIXME: not sure if this should be in, apparently bugs VSIDS.
+				&& activityListener != null) {
+				activityListener.callbackOnChange(atom);
 			}
 		}
 
@@ -228,8 +230,8 @@ public class ChoiceInfluenceManager implements Checkable {
 		}
 	}
 	
-	public static interface ActivityListener {
-		void callbackOnChanged(int atom, boolean active);
+	public interface ActivityListener {
+		void callbackOnChange(int atom);
 	}
 
 }

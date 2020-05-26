@@ -37,7 +37,9 @@ import org.junit.Test;
 import java.io.IOException;
 
 import static at.ac.tuwien.kr.alpha.TestUtil.literal;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Copyright (c) 2017-2019, the Alpha Team.

@@ -27,18 +27,23 @@
  */
 package at.ac.tuwien.kr.alpha.solver;
 
-import at.ac.tuwien.kr.alpha.common.*;
+import at.ac.tuwien.kr.alpha.common.AtomStore;
+import at.ac.tuwien.kr.alpha.common.AtomStoreImpl;
+import at.ac.tuwien.kr.alpha.common.AtomStoreTest;
+import at.ac.tuwien.kr.alpha.common.NoGood;
+import at.ac.tuwien.kr.alpha.common.NoGoodInterface.Type;
 import org.junit.Before;
 import org.junit.Test;
-
-import at.ac.tuwien.kr.alpha.common.NoGoodInterface.Type;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static at.ac.tuwien.kr.alpha.common.NoGoodTest.fromOldLiterals;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class LearnedNoGoodDeletionTest {
 

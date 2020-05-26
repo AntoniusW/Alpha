@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2019, the Alpha Team.
+/*
+ * Copyright (c) 2019-2020, the Alpha Team.
  * All rights reserved.
  *
  * Additional changes made by Siemens.
@@ -30,6 +30,7 @@ package at.ac.tuwien.kr.alpha.config;
 import at.ac.tuwien.kr.alpha.grounder.heuristics.GrounderHeuristicsConfiguration;
 import at.ac.tuwien.kr.alpha.solver.BinaryNoGoodPropagationEstimation;
 import at.ac.tuwien.kr.alpha.solver.heuristics.BranchingHeuristicFactory.Heuristic;
+import at.ac.tuwien.kr.alpha.solver.heuristics.PhaseInitializerFactory;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -60,6 +61,8 @@ public class SystemConfig {
 	public static final String DEFAULT_GROUNDER_TOLERANCE_CONSTRAINTS = GrounderHeuristicsConfiguration.STRICT_STRING;
 	public static final String DEFAULT_GROUNDER_TOLERANCE_RULES = GrounderHeuristicsConfiguration.STRICT_STRING;
 	public static final boolean DEFAULT_GROUNDER_ACCUMULATOR_ENABLED = false;
+	public static final boolean DEFAULT_ENABLE_RESTARTS = false;
+	public static final PhaseInitializerFactory.InitialPhase DEFAULT_PHASE_INITIALIZER = PhaseInitializerFactory.InitialPhase.RULESTRUEATOMSFALSE;
 
 	private String grounderName = SystemConfig.DEFAULT_GROUNDER_NAME;
 	private String solverName = SystemConfig.DEFAULT_SOLVER_NAME;
@@ -79,6 +82,8 @@ public class SystemConfig {
 	private String grounderToleranceConstraints = DEFAULT_GROUNDER_TOLERANCE_CONSTRAINTS;
 	private String grounderToleranceRules = DEFAULT_GROUNDER_TOLERANCE_RULES;
 	private boolean grounderAccumulatorEnabled = DEFAULT_GROUNDER_ACCUMULATOR_ENABLED;
+	private boolean areRestartsEnabled = SystemConfig.DEFAULT_ENABLE_RESTARTS;
+	private PhaseInitializerFactory.InitialPhase phaseInitializer = SystemConfig.DEFAULT_PHASE_INITIALIZER;
 
 	public String getGrounderName() {
 		return this.grounderName;
@@ -235,4 +240,24 @@ public class SystemConfig {
 	public void setGrounderAccumulatorEnabled(boolean grounderAccumulatorEnabled) {
 		this.grounderAccumulatorEnabled = grounderAccumulatorEnabled;
 	}
+	public boolean areRestartsEnabled() {
+		return areRestartsEnabled;
+	}
+
+	public void setRestartsEnabled(boolean areRestartsEnabled) {
+		this.areRestartsEnabled = areRestartsEnabled;
+	}
+
+	public PhaseInitializerFactory.InitialPhase getPhaseInitializer() {
+		return phaseInitializer;
+	}
+
+	public void setPhaseInitializer(PhaseInitializerFactory.InitialPhase phaseInitializer) {
+		this.phaseInitializer = phaseInitializer;
+	}
+
+	public void setPhaseInitializerName(String phaseInitializerName) {
+		this.phaseInitializer = PhaseInitializerFactory.InitialPhase.valueOf(phaseInitializerName.toUpperCase());
+	}
+
 }

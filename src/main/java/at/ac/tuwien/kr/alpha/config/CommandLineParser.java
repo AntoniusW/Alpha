@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2016-2020, the Alpha Team.
  * All rights reserved.
  *
@@ -29,6 +29,7 @@ package at.ac.tuwien.kr.alpha.config;
 
 import at.ac.tuwien.kr.alpha.solver.BinaryNoGoodPropagationEstimation;
 import at.ac.tuwien.kr.alpha.solver.heuristics.BranchingHeuristicFactory.Heuristic;
+import at.ac.tuwien.kr.alpha.solver.heuristics.PhaseInitializerFactory;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
@@ -112,7 +113,7 @@ public class CommandLineParser {
 			.desc("use counting grid normalization instead of sorting circuit for #count (default: " + SystemConfig.DEFAULT_USE_NORMALIZATION_GRID + ")")
 			.build();
 	private static final Option OPT_NO_NOGOOD_DELETION = Option.builder("dnd").longOpt("disableNoGoodDeletion")
-			.desc("disable the deletion of (learned, little active) nogoods (default: " 
+			.desc("disable the deletion of (learned, little active) nogoods (default: "
 							+ SystemConfig.DEFAULT_DISABLE_NOGOOD_DELETION + ")")
 			.build();
 	private static final Option OPT_GROUNDER_TOLERANCE_CONSTRAINTS = Option.builder("gtc").longOpt("grounderToleranceConstraints")
@@ -127,6 +128,13 @@ public class CommandLineParser {
 			.desc("activates the accumulator grounding strategy by disabling removal of instances from grounder memory in certain cases (default: "
 						+ SystemConfig.DEFAULT_GROUNDER_ACCUMULATOR_ENABLED + ")")
 			.build();
+	private static final Option OPT_ENABLE_RESTARTS = Option.builder("rs").longOpt("enableRestarts")
+		.desc("enable the usage of (dynamic and static) restarts (default: "
+			+ SystemConfig.DEFAULT_ENABLE_RESTARTS + ")")
+		.build();
+	private static final Option OPT_INITIAL_PHASE = Option.builder("ph").longOpt("initialPhase").hasArg(true).argName("initializer")
+		.desc("set the initial phase [ " + PhaseInitializerFactory.InitialPhase.listAllowedValues() + " ] (default: " + SystemConfig.DEFAULT_PHASE_INITIALIZER + ")")
+		.build();
 	//@formatter:on
 
 	private static final Options CLI_OPTS = new Options();
@@ -162,6 +170,8 @@ public class CommandLineParser {
 		CommandLineParser.CLI_OPTS.addOption(CommandLineParser.OPT_GROUNDER_TOLERANCE_CONSTRAINTS);
 		CommandLineParser.CLI_OPTS.addOption(CommandLineParser.OPT_GROUNDER_TOLERANCE_RULES);
 		CommandLineParser.CLI_OPTS.addOption(CommandLineParser.OPT_GROUNDER_ACCUMULATOR_ENABLED);
+		CommandLineParser.CLI_OPTS.addOption(CommandLineParser.OPT_ENABLE_RESTARTS);
+		CommandLineParser.CLI_OPTS.addOption(CommandLineParser.OPT_INITIAL_PHASE);
 	}
 
 	/*
@@ -208,6 +218,8 @@ public class CommandLineParser {
 		this.globalOptionHandlers.put(CommandLineParser.OPT_GROUNDER_TOLERANCE_CONSTRAINTS.getOpt(), this::handleGrounderToleranceConstraints);
 		this.globalOptionHandlers.put(CommandLineParser.OPT_GROUNDER_TOLERANCE_RULES.getOpt(), this::handleGrounderToleranceRules);
 		this.globalOptionHandlers.put(CommandLineParser.OPT_GROUNDER_ACCUMULATOR_ENABLED.getOpt(), this::handleGrounderNoInstanceRemoval);
+		this.globalOptionHandlers.put(CommandLineParser.OPT_ENABLE_RESTARTS.getOpt(), this::handleEnableRestarts);
+		this.globalOptionHandlers.put(CommandLineParser.OPT_INITIAL_PHASE.getOpt(), this::handleInitialPhase);
 
 		this.inputOptionHandlers.put(CommandLineParser.OPT_NUM_ANSWER_SETS.getOpt(), this::handleNumAnswerSets);
 		this.inputOptionHandlers.put(CommandLineParser.OPT_INPUT.getOpt(), this::handleInput);
@@ -410,4 +422,17 @@ public class CommandLineParser {
 		cfg.setGrounderAccumulatorEnabled(true);
 	}
 
+	private void handleEnableRestarts(Option opt, SystemConfig cfg) {
+		cfg.setRestartsEnabled(true);
+	}
+
+	private void handleInitialPhase(Option opt, SystemConfig cfg) throws ParseException {
+		String initialPhase = opt.getValue(SystemConfig.DEFAULT_PHASE_INITIALIZER.name());
+		try {
+			cfg.setPhaseInitializerName(initialPhase);
+		} catch (IllegalArgumentException e) {
+			throw new ParseException("Unknown initial phase: " + initialPhase + ". Please try one of the following: "
+					+ PhaseInitializerFactory.InitialPhase.listAllowedValues());
+		}
+	}
 }

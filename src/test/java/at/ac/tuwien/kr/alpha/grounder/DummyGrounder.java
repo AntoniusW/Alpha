@@ -31,6 +31,7 @@ import at.ac.tuwien.kr.alpha.common.*;
 import at.ac.tuwien.kr.alpha.common.atoms.Atom;
 import at.ac.tuwien.kr.alpha.common.atoms.BasicAtom;
 import at.ac.tuwien.kr.alpha.grounder.atoms.RuleAtom;
+import at.ac.tuwien.kr.alpha.grounder.structure.AtomChoiceRelation;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -74,6 +75,7 @@ public class DummyGrounder implements Grounder {
 	private static Atom atomCC = new BasicAtom(Predicate.getInstance("c", 0));
 	private static Rule ruleABC = new Rule(new DisjunctiveHead(Collections.singletonList(atomCC)), Arrays.asList(atomAA.toLiteral(), atomBB.toLiteral()));
 	private static Atom rule1 = new RuleAtom(NonGroundRule.constructNonGroundRule(ruleABC), new Substitution());
+	private static AtomChoiceRelation atomChoiceRelation = new AtomChoiceRelation();
 	private Set<Integer> returnedNogoods = new HashSet<>();
 
 	public DummyGrounder(AtomStore atomStore) {
@@ -102,6 +104,11 @@ public class DummyGrounder implements Grounder {
 			solverDerivedNoGoods.put(noGood, solverDerivedNoGoodIdCounter++);
 		}
 		return solverDerivedNoGoods.get(noGood);
+	}
+
+	@Override
+	public AtomChoiceRelation getAtomChoiceRelation() {
+		return atomChoiceRelation;
 	}
 
 	@Override

@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2019, the Alpha Team.
+/*
+ * Copyright (c) 2019-2020, the Alpha Team.
  * All rights reserved.
  *
  * Additional changes made by Siemens.
@@ -27,6 +27,7 @@
  */
 package at.ac.tuwien.kr.alpha.config;
 
+import at.ac.tuwien.kr.alpha.solver.heuristics.PhaseInitializerFactory;
 import org.apache.commons.cli.ParseException;
 import org.junit.Test;
 
@@ -146,6 +147,34 @@ public class CommandLineParserTest {
 		CommandLineParser parser = new CommandLineParser(DEFAULT_COMMAND_LINE, DEFAULT_ABORT_ACTION);
 		AlphaConfig alphaConfig = parser.parseCommandLine(new String[]{"-str", "aString.", "-acc"});
 		assertTrue(alphaConfig.getAlphaConfig().isGrounderAccumulatorEnabled());
+	}
+
+	@Test
+	public void initialPhase_alltrue() throws ParseException {
+		CommandLineParser parser = new CommandLineParser(DEFAULT_COMMAND_LINE, DEFAULT_ABORT_ACTION);
+		AlphaConfig alphaConfig = parser.parseCommandLine(new String[]{"-str", "aString.", "-ph", "allTrue"});
+		assertEquals(PhaseInitializerFactory.InitialPhase.ALLTRUE, alphaConfig.getAlphaConfig().getPhaseInitializer());
+	}
+
+	@Test
+	public void initialPhase_allfalse() throws ParseException {
+		CommandLineParser parser = new CommandLineParser(DEFAULT_COMMAND_LINE, DEFAULT_ABORT_ACTION);
+		AlphaConfig alphaConfig = parser.parseCommandLine(new String[]{"-str", "aString.", "-ph", "AllFalse"});
+		assertEquals(PhaseInitializerFactory.InitialPhase.ALLFALSE, alphaConfig.getAlphaConfig().getPhaseInitializer());
+	}
+
+	@Test
+	public void initialPhase_random() throws ParseException {
+		CommandLineParser parser = new CommandLineParser(DEFAULT_COMMAND_LINE, DEFAULT_ABORT_ACTION);
+		AlphaConfig alphaConfig = parser.parseCommandLine(new String[]{"-str", "aString.", "-ph", "Random"});
+		assertEquals(PhaseInitializerFactory.InitialPhase.RANDOM, alphaConfig.getAlphaConfig().getPhaseInitializer());
+	}
+
+	@Test
+	public void initialPhase_rulesTrueAtomsFalse() throws ParseException {
+		CommandLineParser parser = new CommandLineParser(DEFAULT_COMMAND_LINE, DEFAULT_ABORT_ACTION);
+		AlphaConfig alphaConfig = parser.parseCommandLine(new String[]{"-str", "aString.", "-ph", "RulesTrueAtomsFalse"});
+		assertEquals(PhaseInitializerFactory.InitialPhase.RULESTRUEATOMSFALSE, alphaConfig.getAlphaConfig().getPhaseInitializer());
 	}
 
 }

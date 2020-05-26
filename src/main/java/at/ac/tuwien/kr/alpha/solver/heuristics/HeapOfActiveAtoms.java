@@ -38,14 +38,17 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.PriorityQueue;
 
+import static at.ac.tuwien.kr.alpha.Util.arrayGrowthSize;
 import static at.ac.tuwien.kr.alpha.common.Literals.atomOf;
 
 /**
  * Manages a heap of atoms that are assigned an activity, such that the most active atom
  * resides at the top of the heap.
- * In contrast to standard heuristics like VSIDS, activities are not periodically decayed but
- * the increment added when increasing activities is constantly increased itself, which has the
+ * Activities are not periodically decayed but an increasing increment is added for each updated activity, which has the
  * same effect.
+ *
+ * The heap contains only (once-active) choice atoms, i.e., the heap may contain choice points that are currently
+ * inactive but once were active.
  *
  */
 public class HeapOfActiveAtoms {
@@ -53,22 +56,24 @@ public class HeapOfActiveAtoms {
 
 	private static final double NORMALIZATION_THRESHOLD = 1E100;
 	private static final double INCREMENT_TO_AVOID_DENORMALS = Double.MIN_VALUE * NORMALIZATION_THRESHOLD;
-	private static final double SCORE_EPSILON = 1E-100;
+	static final double SCORE_EPSILON = 1E-100;
 
-	private boolean[] incrementedActivityScores = new boolean[0];
-	protected double[] activityScores = new double[0];
-	protected final PriorityQueue<Integer> heap = new PriorityQueue<>(new AtomActivityComparator().reversed());
+	boolean[] incrementedActivityScores = new boolean[0];
+	private boolean[] occursInHeap = new boolean[0];	// Stores whether an atom is currently in the heap (or a left-over duplicate).
+	double[] activityScores = new double[0];
+	final PriorityQueue<Integer> heap = new PriorityQueue<>(new AtomActivityComparator().reversed());
 
 	protected ChoiceManager choiceManager;
 	private int decayPeriod;
 	private double decayFactor;
 	private int stepsSinceLastDecay;
 	private double currentActivityIncrement = 1.0;
-	private int numberOfNormalizations;
+	int numberOfNormalizations;
+	private long numAddedToHeapByActivity;
 	
-	private final MOMs moms;
+	final MOMs moms;
 
-	public HeapOfActiveAtoms(int decayPeriod, double decayFactor, ChoiceManager choiceManager) {
+	HeapOfActiveAtoms(int decayPeriod, double decayFactor, ChoiceManager choiceManager) {
 		this.decayPeriod = decayPeriod;
 		this.decayFactor = decayFactor;
 		this.choiceManager = choiceManager;
@@ -100,6 +105,10 @@ public class HeapOfActiveAtoms {
 	 */
 	public double getDecayFactor() {
 		return decayFactor;
+	}
+
+	double getCurrentActivityIncrement() {
+		return currentActivityIncrement;
 	}
 
 	/**
@@ -144,7 +153,7 @@ public class HeapOfActiveAtoms {
 	/**
 	 * Computes and stores initial activity values for the atoms occurring in the given nogood.
 	 */
-	protected void initActivity(NoGood newNoGood) {
+	private void initActivity(NoGood newNoGood) {
 		if (moms != null) {
 			initActivityMOMs(newNoGood);
 		} else {
@@ -159,7 +168,7 @@ public class HeapOfActiveAtoms {
 	 * 1.01 is added to avoid computing the logarithm of a number between 0 and 1 (input scores have to be greater or equal to 0!)
 	 * @param newNoGood a new nogood, the atoms occurring in which will be initialized
 	 */
-	private void initActivityMOMs(NoGood newNoGood) {
+	protected void initActivityMOMs(NoGood newNoGood) {
 		LOGGER.debug("Initializing activity scores with MOMs");
 		for (int literal : newNoGood) {
 			int atom = atomOf(literal);
@@ -181,6 +190,19 @@ public class HeapOfActiveAtoms {
 	void growToCapacity(int newCapacity) {
 		activityScores = Arrays.copyOf(activityScores, newCapacity);
 		incrementedActivityScores = Arrays.copyOf(incrementedActivityScores, newCapacity);
+		occursInHeap = Arrays.copyOf(occursInHeap, newCapacity);
+	}
+
+	void growForMaxAtomId(int maxAtomId) {
+		// Grow arrays only if needed.
+		if (activityScores.length > maxAtomId) {
+			return;
+		}
+		int newCapacity = arrayGrowthSize(activityScores.length);
+		if (newCapacity < maxAtomId + 1) {
+			newCapacity = maxAtomId + 1;
+		}
+		growToCapacity(newCapacity);
 	}
 
 	private void initActivityNaive(NoGood newNoGood) {
@@ -194,8 +216,18 @@ public class HeapOfActiveAtoms {
 	/**
 	 * Returns the atom with the highest activity score and removes it from the heap.
 	 */
-	public Integer getMostActiveAtom() {
-		return heap.poll();
+	Integer getMostActiveAtom() {
+		Integer mostActiveAtom;
+		// Here we lazily remove atoms from the heap that were once added and had their activity increased
+		// (which creates a duplicate entry in the heap).
+		// Remove the topmost atom from the heap until non-duplicate one is obtained.
+		do {
+			mostActiveAtom = heap.poll();
+		} while (mostActiveAtom != null && !occursInHeap[mostActiveAtom]);
+		if (mostActiveAtom != null) {
+			occursInHeap[mostActiveAtom] = false;
+		}
+		return mostActiveAtom;
 	}
 
 	/**
@@ -204,7 +236,7 @@ public class HeapOfActiveAtoms {
 	 * by adding to it the current activity increment times the increment factor.
 	 * If the new value exceeds a certain threshold, all activity scores are normalized.
 	 */
-	public void incrementActivity(int atom) {
+	void incrementActivity(int atom) {
 		incrementActivity(atom, currentActivityIncrement);
 	}
 	
@@ -215,7 +247,7 @@ public class HeapOfActiveAtoms {
 		incrementedActivityScores[atom] = true;
 	}
 
-	private void setActivity(int atom, double newActivity) {
+	void setActivity(int atom, double newActivity) {
 		activityScores[atom] = newActivity;
 		if (LOGGER.isTraceEnabled()) {
 			LOGGER.trace("Activity of atom {} set to {}", atom, newActivity);
@@ -225,7 +257,10 @@ public class HeapOfActiveAtoms {
 			normalizeActivityScores();
 		}
 
-		heap.add(atom); // ignores the fact that atom may already be in the heap for performance reasons (may be revised in future)
+		if (occursInHeap[atom]) {
+			numAddedToHeapByActivity++;
+			heap.add(atom); // For performance reason ignores that the atom may already be in the heap.
+		}
 	}
 
 	/**
@@ -242,11 +277,15 @@ public class HeapOfActiveAtoms {
 		}
 	}
 
-	private double normalizeNewActivityScore(double newActivity) {
+	double normalizeNewActivityScore(double newActivity) {
 		for (int i = 0; i < numberOfNormalizations; i++) {
 			newActivity = (newActivity + INCREMENT_TO_AVOID_DENORMALS) / NORMALIZATION_THRESHOLD;
 		}
 		return newActivity;
+	}
+
+	long getNumAddedToHeapByActivity() {
+		return numAddedToHeapByActivity;
 	}
 
 	private class AtomActivityComparator implements Comparator<Integer> {
@@ -261,19 +300,15 @@ public class HeapOfActiveAtoms {
 	private class ChoicePointActivityListener implements ChoiceInfluenceManager.ActivityListener {
 
 		@Override
-		public void callbackOnChanged(int atom, boolean active) {
-			if (active && choiceManager.isActiveChoiceAtom(atom)) {
-				if (atom < activityScores.length) {
-					/* if atom has no activity score, probably the atom is still being buffered
-					   by DependencyDrivenVSIDSHeuristic and will get an initial activity
-					   when the buffer is ingested */
-					heap.add(atom);
-				}
+		public void callbackOnChange(int atom) {
+			if (!occursInHeap[atom]) {
+				occursInHeap[atom] = true;
+				heap.add(atom);
 			}
 		}
 	}
 
-	public void setMOMsStrategy(BinaryNoGoodPropagationEstimation.Strategy momsStrategy) {
+	void setMOMsStrategy(BinaryNoGoodPropagationEstimation.Strategy momsStrategy) {
 		if (moms != null) {
 			moms.setStrategy(momsStrategy);
 		}

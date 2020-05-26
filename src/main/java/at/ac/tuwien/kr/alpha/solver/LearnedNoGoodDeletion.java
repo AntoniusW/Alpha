@@ -25,6 +25,7 @@ class LearnedNoGoodDeletion {
 	private final NoGoodStoreAlphaRoaming store;
 	private final Assignment assignment;
 	private int conflictCounter;
+	private int totalConflictsCounter;
 	private int cleanupCounter;
 	private int numberOfDeletedNoGoods;
 
@@ -36,6 +37,7 @@ class LearnedNoGoodDeletion {
 	void reset() {
 		learnedNoGoods.clear();
 		conflictCounter = 0;
+		totalConflictsCounter = 0;
 		cleanupCounter = 0;
 		numberOfDeletedNoGoods = 0;
 	}
@@ -62,6 +64,7 @@ class LearnedNoGoodDeletion {
 	}
 
 	void runNoGoodDeletion() {
+		totalConflictsCounter += conflictCounter;
 		conflictCounter = 0;
 		cleanupCounter++;
 		// Reset the sequence after enough growth cycles.
@@ -112,5 +115,9 @@ class LearnedNoGoodDeletion {
 
 	public int getNumberOfDeletedNoGoods() {
 		return numberOfDeletedNoGoods;
+	}
+
+	int getNumTotalConflicts() {
+		return totalConflictsCounter + conflictCounter;
 	}
 }

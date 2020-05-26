@@ -28,7 +28,11 @@ package at.ac.tuwien.kr.alpha.solver.heuristics;
 import at.ac.tuwien.kr.alpha.common.NoGood;
 import at.ac.tuwien.kr.alpha.solver.learning.GroundConflictNoGoodLearner.ConflictAnalysisResult;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 import static at.ac.tuwien.kr.alpha.Util.oops;
 
@@ -96,6 +100,10 @@ public class ChainedBranchingHeuristics implements BranchingHeuristic {
 		if (decisionCounters != null) {
 			decisionCounters = Arrays.copyOf(decisionCounters, decisionCounters.length + 1);
 		}
+	}
+
+	public BranchingHeuristic getFirstElement() {
+		return chain.get(0);
 	}
 
 	public BranchingHeuristic getLastElement() {

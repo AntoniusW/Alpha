@@ -35,8 +35,15 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 import static at.ac.tuwien.kr.alpha.Util.oops;
-import static at.ac.tuwien.kr.alpha.common.Literals.*;
-import static at.ac.tuwien.kr.alpha.common.NoGoodInterface.Type.*;
+import static at.ac.tuwien.kr.alpha.common.Literals.atomOf;
+import static at.ac.tuwien.kr.alpha.common.Literals.isNegated;
+import static at.ac.tuwien.kr.alpha.common.Literals.isPositive;
+import static at.ac.tuwien.kr.alpha.common.Literals.negateLiteral;
+import static at.ac.tuwien.kr.alpha.common.Literals.positiveLiteral;
+import static at.ac.tuwien.kr.alpha.common.NoGoodInterface.Type.INTERNAL;
+import static at.ac.tuwien.kr.alpha.common.NoGoodInterface.Type.LEARNT;
+import static at.ac.tuwien.kr.alpha.common.NoGoodInterface.Type.STATIC;
+import static at.ac.tuwien.kr.alpha.common.NoGoodInterface.Type.SUPPORT;
 
 public class NoGood implements NoGoodInterface, Comparable<NoGood> {
 	public static final int HEAD = 0;

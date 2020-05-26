@@ -25,28 +25,39 @@
  */
 package at.ac.tuwien.kr.alpha.solver;
 
+import at.ac.tuwien.kr.alpha.solver.heuristics.BranchingHeuristic;
+import at.ac.tuwien.kr.alpha.solver.heuristics.ChainedBranchingHeuristics;
+import at.ac.tuwien.kr.alpha.solver.heuristics.VSIDSWithPhaseSaving;
 import org.slf4j.Logger;
 
 /**
- * Collects performance data (mainly number of decisions per second) and outputs them on demand.
+ * Collects performance data and outputs them on demand.
+ *
+ * Copyright (c) 2019, the Alpha Team.
  */
 public class PerformanceLog {
 
-	private ChoiceManager choiceManager;
-	private TrailAssignment assignment;
+	private final ChoiceManager choiceManager;
+	private final TrailAssignment assignment;
+	private final MixedRestartStrategy restartStrategy;
+	private final LearnedNoGoodDeletion learnedNoGoodDeletion;
+	private final BranchingHeuristic branchingHeuristic;
 	private long msBetweenOutputs;
 	
 	private Long timeFirstEntry;
 	private Long timeLastPerformanceLog;
 	private int numberOfChoicesLastPerformanceLog;
+	private int numberOfRestartsLastPerformanceLog;
+	private int numberOfConflictsLastPerformanceLog;
+	private int numberOfDeletedNoGoodsLastPerformanceLog;
 
-	/**
-	 * @param msBetweenOutputs
-	 */
-	public PerformanceLog(ChoiceManager choiceManager, TrailAssignment assignment, long msBetweenOutputs) {
+	public PerformanceLog(ChoiceManager choiceManager, TrailAssignment assignment, MixedRestartStrategy restartStrategy, LearnedNoGoodDeletion learnedNoGoodDeletion, BranchingHeuristic branchingHeuristic, long msBetweenOutputs) {
 		super();
 		this.choiceManager = choiceManager;
 		this.assignment = assignment;
+		this.restartStrategy = restartStrategy;
+		this.learnedNoGoodDeletion = learnedNoGoodDeletion;
+		this.branchingHeuristic = branchingHeuristic;
 		this.msBetweenOutputs = msBetweenOutputs;
 	}
 
@@ -60,14 +71,51 @@ public class PerformanceLog {
 	 */
 	public void infoIfTimeForOutput(Logger logger) {
 		long currentTime = System.currentTimeMillis();
-		int currentNumberOfChoices = choiceManager.getChoices();
-		if (currentTime >= timeLastPerformanceLog + msBetweenOutputs) {
-			logger.info("Decisions in {}s: {}", (currentTime - timeLastPerformanceLog) / 1000.0f, currentNumberOfChoices - numberOfChoicesLastPerformanceLog);
-			timeLastPerformanceLog = currentTime;
-			numberOfChoicesLastPerformanceLog = currentNumberOfChoices;
-			float overallTime = (currentTime - timeFirstEntry) / 1000.0f;
-			float decisionsPerSec = currentNumberOfChoices / overallTime;
-			logger.info("Overall performance: {} decisions in {}s or {} decisions per sec. Overall replayed assignments: {}.", currentNumberOfChoices, overallTime, decisionsPerSec, assignment.replayCounter);
+		if (currentTime < timeLastPerformanceLog + msBetweenOutputs) {
+			return;
 		}
+		int currentNumberOfChoices = choiceManager.getChoices();
+		float timeSinceLastLog = (currentTime - timeLastPerformanceLog) / 1000.0f;
+		logger.info("Decisions in {}s: {}", timeSinceLastLog, currentNumberOfChoices - numberOfChoicesLastPerformanceLog);
+		timeLastPerformanceLog = currentTime;
+		numberOfChoicesLastPerformanceLog = currentNumberOfChoices;
+		float overallTime = (currentTime - timeFirstEntry) / 1000.0f;
+		float decisionsPerSec = currentNumberOfChoices / overallTime;
+		logger.info("Overall performance: {} decisions in {}s or {} decisions per sec. Overall replayed assignments: {}.", currentNumberOfChoices, overallTime, decisionsPerSec, assignment.replayCounter);
+		if (restartStrategy != null) {
+			int totalRestarts = restartStrategy.getTotalRestarts();
+			int currentNumberOfRestarts = totalRestarts - numberOfRestartsLastPerformanceLog;
+			logStatsPerTime(logger, "Restarts", timeSinceLastLog, overallTime, totalRestarts, currentNumberOfRestarts);
+			numberOfRestartsLastPerformanceLog = totalRestarts;
+		}
+		if (branchingHeuristic != null && branchingHeuristic instanceof ChainedBranchingHeuristics) {
+			BranchingHeuristic firstHeuristic = ((ChainedBranchingHeuristics) branchingHeuristic).getFirstElement();
+			if (firstHeuristic instanceof VSIDSWithPhaseSaving) {
+				VSIDSWithPhaseSaving vsidsWithPhaseSaving = (VSIDSWithPhaseSaving) firstHeuristic;
+				long numThrownAway = vsidsWithPhaseSaving.getNumThrownAway();
+				long numNoChoicePoint = vsidsWithPhaseSaving.getNumNoChoicePoint();
+				long numNotActiveChoicePoint = vsidsWithPhaseSaving.getNumNotActiveChoicePoint();
+				double activityDecrease = vsidsWithPhaseSaving.getActivityDecrease();
+				logger.info("Heuristic threw away {} preferred choices ({} no choice, {} not active choice points) averaging {} thrown away per choice done.", numThrownAway, numNoChoicePoint, numNotActiveChoicePoint, (float) numThrownAway / currentNumberOfChoices);
+				logger.info("HeapOfActiveAtoms had {} choices added due to increased activity.", vsidsWithPhaseSaving.getNumAddedToHeapByActivity());
+				logger.info("Atom activity decreased overall by {} or {} per choice on average", activityDecrease, activityDecrease / currentNumberOfChoices);
+			}
+		}
+		if (learnedNoGoodDeletion != null) {
+			int totalConflicts = learnedNoGoodDeletion.getNumTotalConflicts();
+			int currentNumConflicts = totalConflicts - numberOfConflictsLastPerformanceLog;
+			int totalDeletedNogoods = learnedNoGoodDeletion.getNumberOfDeletedNoGoods();
+			int currenDeletedNoGoods = totalDeletedNogoods - numberOfDeletedNoGoodsLastPerformanceLog;
+			logStatsPerTime(logger, "Conflicts", timeSinceLastLog, overallTime, totalConflicts, currentNumConflicts);
+			logStatsPerTime(logger, "Deleted NoGoods", timeSinceLastLog, overallTime, totalDeletedNogoods, currenDeletedNoGoods);
+			numberOfConflictsLastPerformanceLog = totalConflicts;
+			numberOfDeletedNoGoodsLastPerformanceLog = totalDeletedNogoods;
+		}
+	}
+
+	private void logStatsPerTime(Logger logger, String statName, float timeSinceLastLog, float overallTime, int total, int differenceSinceLast) {
+		logger.info(statName + " in {}s: {}", timeSinceLastLog, differenceSinceLast);
+		logger.info("Overall performance: {} " + statName + " in {}s or {} " + statName + " per sec", total, overallTime, total / overallTime);
+
 	}
 }

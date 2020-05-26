@@ -1,7 +1,12 @@
 package at.ac.tuwien.kr.alpha.grounder.transformation;
 
-import at.ac.tuwien.kr.alpha.common.*;
-import at.ac.tuwien.kr.alpha.common.atoms.*;
+import at.ac.tuwien.kr.alpha.common.DisjunctiveHead;
+import at.ac.tuwien.kr.alpha.common.Program;
+import at.ac.tuwien.kr.alpha.common.Rule;
+import at.ac.tuwien.kr.alpha.common.atoms.AggregateAtom;
+import at.ac.tuwien.kr.alpha.common.atoms.AggregateLiteral;
+import at.ac.tuwien.kr.alpha.common.atoms.BasicAtom;
+import at.ac.tuwien.kr.alpha.common.atoms.Literal;
 import at.ac.tuwien.kr.alpha.common.terms.ConstantTerm;
 import at.ac.tuwien.kr.alpha.common.terms.FunctionTerm;
 import at.ac.tuwien.kr.alpha.common.terms.Term;
@@ -11,7 +16,13 @@ import at.ac.tuwien.kr.alpha.grounder.Unifier;
 import at.ac.tuwien.kr.alpha.grounder.atoms.EnumerationAtom;
 import at.ac.tuwien.kr.alpha.grounder.parser.ProgramParser;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
 
 /**
  * Copyright (c) 2017, the Alpha Team.

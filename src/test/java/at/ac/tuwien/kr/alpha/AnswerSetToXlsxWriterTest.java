@@ -1,11 +1,8 @@
 package at.ac.tuwien.kr.alpha;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
+import at.ac.tuwien.kr.alpha.api.mapper.impl.AnswerSetToWorkbookMapperTest;
+import at.ac.tuwien.kr.alpha.common.AnswerSet;
+import at.ac.tuwien.kr.alpha.common.AnswerSetBuilder;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -13,9 +10,11 @@ import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.junit.Assert;
 import org.junit.Test;
 
-import at.ac.tuwien.kr.alpha.api.mapper.impl.AnswerSetToWorkbookMapperTest;
-import at.ac.tuwien.kr.alpha.common.AnswerSet;
-import at.ac.tuwien.kr.alpha.common.AnswerSetBuilder;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class AnswerSetToXlsxWriterTest {
 

@@ -72,6 +72,13 @@ public interface Assignment {
 	Antecedent getImpliedBy(int atom);
 
 	/**
+	 * Returns the last truth value (i.e., phase) assigned to the atom.
+	 * @param atom the atom
+	 * @return the last truth value.
+	 */
+	boolean getLastValue(int atom);
+
+	/**
 	 * Determines if the given {@code noGood} is undefined in the current assignment.
 	 *
 	 * @param noGood

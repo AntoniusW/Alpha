@@ -37,6 +37,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.StringJoiner;
+import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -57,9 +58,13 @@ public class Util {
 	}
 
 	public static <E> String join(String prefix, Iterable<E> iterable, String delimiter, String suffix) {
+		return join(prefix, iterable, E::toString, delimiter, suffix);
+	}
+
+	public static <E> String join(String prefix, Iterable<E> iterable, Function<E, String> toStringMethod, String delimiter, String suffix) {
 		StringJoiner joiner = new StringJoiner(delimiter, prefix, suffix);
 		for (E element : iterable) {
-			joiner.add(element.toString());
+			joiner.add(toStringMethod.apply(element));
 		}
 		return joiner.toString();
 	}

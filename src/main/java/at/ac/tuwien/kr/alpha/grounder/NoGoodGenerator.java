@@ -34,6 +34,7 @@ import at.ac.tuwien.kr.alpha.common.atoms.Atom;
 import at.ac.tuwien.kr.alpha.common.atoms.FixedInterpretationLiteral;
 import at.ac.tuwien.kr.alpha.grounder.atoms.EnumerationAtom;
 import at.ac.tuwien.kr.alpha.grounder.atoms.RuleAtom;
+import at.ac.tuwien.kr.alpha.grounder.structure.AtomChoiceRelation;
 import at.ac.tuwien.kr.alpha.grounder.structure.ProgramAnalysis;
 
 import java.util.*;
@@ -52,13 +53,15 @@ public class NoGoodGenerator {
 	private final Map<Predicate, LinkedHashSet<Instance>> factsFromProgram;
 	private final ProgramAnalysis programAnalysis;
 	private final Set<NonGroundRule> uniqueGroundRulePerGroundHead;
+	private final AtomChoiceRelation atomChoiceRelation;
 
-	NoGoodGenerator(AtomStore atomStore, ChoiceRecorder recorder, Map<Predicate, LinkedHashSet<Instance>> factsFromProgram, ProgramAnalysis programAnalysis, Set<NonGroundRule> uniqueGroundRulePerGroundHead) {
+	NoGoodGenerator(AtomStore atomStore, ChoiceRecorder recorder, Map<Predicate, LinkedHashSet<Instance>> factsFromProgram, ProgramAnalysis programAnalysis, Set<NonGroundRule> uniqueGroundRulePerGroundHead, AtomChoiceRelation atomChoiceRelation) {
 		this.atomStore = atomStore;
 		this.choiceRecorder = recorder;
 		this.factsFromProgram = factsFromProgram;
 		this.programAnalysis = programAnalysis;
 		this.uniqueGroundRulePerGroundHead = uniqueGroundRulePerGroundHead;
+		this.atomChoiceRelation = atomChoiceRelation;
 	}
 
 	/**
@@ -124,6 +127,13 @@ public class NoGoodGenerator {
 		// If the body of the rule contains negation, add choices.
 		if (!negLiterals.isEmpty()) {
 			result.addAll(choiceRecorder.generateChoiceNoGoods(posLiterals, negLiterals, bodyRepresentingLiteral));
+
+			// Record atom-choiceAtom relationships for rules that are choice points.
+			atomChoiceRelation.growForMaxAtomId(atomStore.getMaxAtomId());
+			atomChoiceRelation.addRelation(headId, atomOf(bodyRepresentingLiteral));
+			for (Integer negLiteral : negLiterals) {
+				atomChoiceRelation.addRelation(atomOf(negLiteral), atomOf(bodyRepresentingLiteral));
+			}
 		}
 
 		return result;

@@ -33,8 +33,12 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 
-import static at.ac.tuwien.kr.alpha.common.Literals.*;
-import static at.ac.tuwien.kr.alpha.solver.ThriceTruth.*;
+import static at.ac.tuwien.kr.alpha.common.Literals.atomOf;
+import static at.ac.tuwien.kr.alpha.common.Literals.isNegated;
+import static at.ac.tuwien.kr.alpha.common.Literals.isPositive;
+import static at.ac.tuwien.kr.alpha.solver.ThriceTruth.FALSE;
+import static at.ac.tuwien.kr.alpha.solver.ThriceTruth.MBT;
+import static at.ac.tuwien.kr.alpha.solver.ThriceTruth.TRUE;
 
 public class NaiveNoGoodStore implements NoGoodStore {
 	private static final Logger LOGGER = LoggerFactory.getLogger(NaiveNoGoodStore.class);

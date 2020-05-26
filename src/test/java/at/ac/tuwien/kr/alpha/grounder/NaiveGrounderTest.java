@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018-2019 Siemens AG
+ * Copyright (c) 2018-2020 Siemens AG
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -58,7 +58,7 @@ import static org.junit.Assert.fail;
 
 /**
  * Tests {@link NaiveGrounder}
- * 
+ *
  * Some test cases use atoms of the something/1 predicate to trick the grounder
  * into believing that other atoms might become true. This is fragile because future implementations
  * of preprocessing techniques might render this trick useless.
@@ -257,7 +257,7 @@ public class NaiveGrounderTest {
 		final NaiveGrounder.BindingResult bindingResult = grounder.getGroundInstantiations(nonGroundRule, nonGroundRule.groundingOrder.groundingOrders.get(startingLiteral), substStartingLiteral, currentAssignment);
 		assertEquals(expectNoGoods, bindingResult.size() > 0);
 	}
-	
+
 	@Test
 	public void testPermissiveGrounderHeuristicTolerance_0_reject() {
 		Program program = PARSER.parse("a(1). "
@@ -265,7 +265,7 @@ public class NaiveGrounderTest {
 				+ "b(X) :- something(X).");
 		testPermissiveGrounderHeuristicTolerance(program, 0, literal("a", "X"), 1, 0, false, Arrays.asList(1));
 	}
-	
+
 	@Test
 	public void testPermissiveGrounderHeuristicTolerance_1_accept() {
 		Program program = PARSER.parse("a(1). "
@@ -273,7 +273,7 @@ public class NaiveGrounderTest {
 				+ "b(X) :- something(X).");
 		testPermissiveGrounderHeuristicTolerance(program, 0, literal("a", "X"), 1, 1, true, Arrays.asList(1));
 	}
-	
+
 	@Test
 	public void testPermissiveGrounderHeuristicTolerance_1_reject() {
 		Program program = PARSER.parse("a(1). "

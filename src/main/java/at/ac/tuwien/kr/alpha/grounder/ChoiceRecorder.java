@@ -27,6 +27,7 @@
  */
 package at.ac.tuwien.kr.alpha.grounder;
 
+import at.ac.tuwien.kr.alpha.Util;
 import at.ac.tuwien.kr.alpha.common.AtomStore;
 import at.ac.tuwien.kr.alpha.common.NoGood;
 import at.ac.tuwien.kr.alpha.grounder.atoms.RuleAtom;
@@ -115,14 +116,9 @@ public class ChoiceRecorder {
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder("[enablers: ");
-		for (Map.Entry<Integer, Integer> enablers : newChoiceAtoms.getLeft().entrySet()) {
-			sb.append(enablers.getKey()).append("/").append(enablers.getValue()).append(", ");
-		}
-		sb.append(" disablers: ");
-		for (Map.Entry<Integer, Integer> disablers : newChoiceAtoms.getRight().entrySet()) {
-			sb.append(disablers.getKey()).append("/").append(disablers.getValue());
-		}
-		return sb.append("]").toString();
+		StringBuilder sb = new StringBuilder();
+		sb.append(Util.join("[enablers: ", newChoiceAtoms.getLeft().entrySet(), (entry) -> entry.getKey() + "/" + entry.getValue(), ", ", ""));
+		sb.append(Util.join(" disablers: ", newChoiceAtoms.getRight().entrySet(), (entry) -> entry.getKey() + "/" + entry.getValue(), ", ", "]"));
+		return sb.toString();
 	}
 }

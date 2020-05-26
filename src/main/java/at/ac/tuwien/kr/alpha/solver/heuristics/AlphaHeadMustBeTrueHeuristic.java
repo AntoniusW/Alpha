@@ -36,6 +36,8 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static at.ac.tuwien.kr.alpha.common.Literals.atomToLiteral;
+
 /**
  * A variant of {@link DependencyDrivenHeuristic} that prefers to choose atoms representing bodies of rules whose heads
  * are assigned {@link at.ac.tuwien.kr.alpha.solver.ThriceTruth#MBT}.
@@ -60,7 +62,7 @@ public class AlphaHeadMustBeTrueHeuristic extends DependencyDrivenHeuristic {
 				.max(Comparator.comparingDouble(bodyActivity::get));
 		if (mostActiveBody.isPresent()) {
 			rememberedAtom = mostActiveBody.get();
-			return rememberedAtom;
+			return atomToLiteral(rememberedAtom);
 		}
 		return super.chooseLiteral();
 	}
