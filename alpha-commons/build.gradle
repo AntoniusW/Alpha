@@ -1,0 +1,29 @@
+plugins {
+    id 'alpha.java-library-conventions'
+    id 'maven-publish' 
+}
+
+dependencies {
+	
+	api project(":alpha-api")
+	
+	testImplementation group: 'junit', name: 'junit', version: '4.12'
+	
+}
+
+java {
+	withSourcesJar()
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'at.ac.tuwien.kr.alpha'
+            artifactId = 'alpha-commons'
+            version = '0.8-SNAPSHOT'
+
+            from components.java
+        }
+    }
+}
+

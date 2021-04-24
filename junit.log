@@ -1,0 +1,82 @@
+653  INFO  org.reflections.Reflections: Reflections took 100 ms to scan 2 urls, producing 2 keys and 19 values 
+1096 INFO  org.reflections.Reflections: Reflections took 7 ms to scan 2 urls, producing 2 keys and 19 values 
+1107 INFO  org.reflections.Reflections: Reflections took 5 ms to scan 2 urls, producing 2 keys and 19 values 
+1119 INFO  org.reflections.Reflections: Reflections took 6 ms to scan 2 urls, producing 2 keys and 19 values 
+1129 INFO  org.reflections.Reflections: Reflections took 5 ms to scan 2 urls, producing 2 keys and 19 values 
+1145 INFO  org.reflections.Reflections: Reflections took 10 ms to scan 2 urls, producing 2 keys and 19 values 
+1160 INFO  org.reflections.Reflections: Reflections took 7 ms to scan 2 urls, producing 2 keys and 19 values 
+1175 INFO  org.reflections.Reflections: Reflections took 8 ms to scan 2 urls, producing 2 keys and 19 values 
+1198 INFO  org.reflections.Reflections: Reflections took 7 ms to scan 2 urls, producing 2 keys and 19 values 
+1213 INFO  org.reflections.Reflections: Reflections took 7 ms to scan 2 urls, producing 2 keys and 19 values 
+1222 INFO  org.reflections.Reflections: Reflections took 6 ms to scan 2 urls, producing 2 keys and 19 values 
+1230 INFO  org.reflections.Reflections: Reflections took 6 ms to scan 2 urls, producing 2 keys and 19 values 
+1238 INFO  org.reflections.Reflections: Reflections took 5 ms to scan 2 urls, producing 2 keys and 19 values 
+1245 INFO  org.reflections.Reflections: Reflections took 4 ms to scan 2 urls, producing 2 keys and 19 values 
+1252 INFO  org.reflections.Reflections: Reflections took 4 ms to scan 2 urls, producing 2 keys and 19 values 
+1260 INFO  org.reflections.Reflections: Reflections took 5 ms to scan 2 urls, producing 2 keys and 19 values 
+1268 INFO  org.reflections.Reflections: Reflections took 5 ms to scan 2 urls, producing 2 keys and 19 values 
+1279 INFO  org.reflections.Reflections: Reflections took 5 ms to scan 2 urls, producing 2 keys and 19 values 
+1286 INFO  org.reflections.Reflections: Reflections took 5 ms to scan 2 urls, producing 2 keys and 19 values 
+1293 INFO  org.reflections.Reflections: Reflections took 5 ms to scan 2 urls, producing 2 keys and 19 values 
+1300 INFO  org.reflections.Reflections: Reflections took 4 ms to scan 2 urls, producing 2 keys and 19 values 
+1349 INFO  org.reflections.Reflections: Reflections took 4 ms to scan 2 urls, producing 2 keys and 19 values 
+1356 INFO  org.reflections.Reflections: Reflections took 4 ms to scan 2 urls, producing 2 keys and 19 values 
+1365 INFO  org.reflections.Reflections: Reflections took 7 ms to scan 2 urls, producing 2 keys and 19 values 
+1372 INFO  org.reflections.Reflections: Reflections took 5 ms to scan 2 urls, producing 2 keys and 19 values 
+1941 INFO  org.reflections.Reflections: Reflections took 7 ms to scan 2 urls, producing 2 keys and 19 values 
+3868 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Decisions in 1.0s: 208
+3872 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Overall performance: 208 decisions in 1.0s or 208.0 decisions per sec. Overall replayed assignments: 551.
+4868 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Decisions in 1.0s: 24
+4868 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Overall performance: 232 decisions in 2.0s or 116.0 decisions per sec. Overall replayed assignments: 714.
+6736 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Decisions in 1.097s: 208
+6736 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Overall performance: 208 decisions in 1.097s or 189.60802 decisions per sec. Overall replayed assignments: 567.
+7773 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Decisions in 1.037s: 29
+7773 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Overall performance: 237 decisions in 2.134s or 111.059044 decisions per sec. Overall replayed assignments: 720.
+9329 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Decisions in 1.077s: 206
+9330 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Overall performance: 206 decisions in 1.077s or 191.27205 decisions per sec. Overall replayed assignments: 520.
+10367 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Decisions in 1.038s: 31
+10368 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Overall performance: 237 decisions in 2.115s or 112.05674 decisions per sec. Overall replayed assignments: 720.
+11740 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Decisions in 1.022s: 221
+11740 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Overall performance: 221 decisions in 1.022s or 216.24268 decisions per sec. Overall replayed assignments: 692.
+20601 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Decisions in 1.048s: 1
+20602 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Overall performance: 1 decisions in 1.048s or 0.9541985 decisions per sec. Overall replayed assignments: 0.
+22781 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Decisions in 1.059s: 1
+22781 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Overall performance: 1 decisions in 1.059s or 0.94428706 decisions per sec. Overall replayed assignments: 0.
+24657 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Decisions in 1.016s: 0
+24657 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Overall performance: 0 decisions in 1.016s or 0.0 decisions per sec. Overall replayed assignments: 0.
+25660 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Decisions in 1.003s: 0
+25660 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Overall performance: 0 decisions in 2.019s or 0.0 decisions per sec. Overall replayed assignments: 0.
+26673 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Decisions in 1.013s: 0
+26674 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Overall performance: 0 decisions in 3.032s or 0.0 decisions per sec. Overall replayed assignments: 0.
+27700 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Decisions in 1.027s: 0
+27701 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Overall performance: 0 decisions in 4.059s or 0.0 decisions per sec. Overall replayed assignments: 0.
+28752 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Decisions in 1.052s: 0
+28753 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Overall performance: 0 decisions in 5.111s or 0.0 decisions per sec. Overall replayed assignments: 0.
+32004 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Decisions in 1.011s: 0
+32005 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Overall performance: 0 decisions in 1.011s or 0.0 decisions per sec. Overall replayed assignments: 0.
+33030 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Decisions in 1.026s: 0
+33030 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Overall performance: 0 decisions in 2.037s or 0.0 decisions per sec. Overall replayed assignments: 0.
+34054 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Decisions in 1.024s: 0
+34055 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Overall performance: 0 decisions in 3.061s or 0.0 decisions per sec. Overall replayed assignments: 0.
+35067 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Decisions in 1.012s: 0
+35067 INFO  a.a.t.kr.alpha.solver.DefaultSolver: Overall performance: 0 decisions in 4.073s or 0.0 decisions per sec. Overall replayed assignments: 0.
+51213 INFO  org.reflections.Reflections: Reflections took 5 ms to scan 2 urls, producing 2 keys and 19 values 
+51228 INFO  org.reflections.Reflections: Reflections took 4 ms to scan 2 urls, producing 2 keys and 19 values 
+51249 INFO  org.reflections.Reflections: Reflections took 4 ms to scan 2 urls, producing 2 keys and 19 values 
+51492 INFO  org.reflections.Reflections: Reflections took 4 ms to scan 2 urls, producing 2 keys and 19 values 
+51502 INFO  org.reflections.Reflections: Reflections took 5 ms to scan 2 urls, producing 2 keys and 19 values 
+51511 INFO  org.reflections.Reflections: Reflections took 5 ms to scan 2 urls, producing 2 keys and 19 values 
+51519 INFO  org.reflections.Reflections: Reflections took 6 ms to scan 2 urls, producing 2 keys and 19 values 
+51526 INFO  org.reflections.Reflections: Reflections took 5 ms to scan 2 urls, producing 2 keys and 19 values 
+51533 INFO  org.reflections.Reflections: Reflections took 5 ms to scan 2 urls, producing 2 keys and 19 values 
+51540 INFO  org.reflections.Reflections: Reflections took 5 ms to scan 2 urls, producing 2 keys and 19 values 
+51549 INFO  org.reflections.Reflections: Reflections took 6 ms to scan 2 urls, producing 2 keys and 19 values 
+51556 INFO  org.reflections.Reflections: Reflections took 4 ms to scan 2 urls, producing 2 keys and 19 values 
+51644 INFO  org.reflections.Reflections: Reflections took 5 ms to scan 2 urls, producing 2 keys and 19 values 
+51652 INFO  org.reflections.Reflections: Reflections took 5 ms to scan 2 urls, producing 2 keys and 19 values 
+51662 INFO  org.reflections.Reflections: Reflections took 6 ms to scan 2 urls, producing 2 keys and 19 values 
+51986 INFO  org.reflections.Reflections: Reflections took 7 ms to scan 2 urls, producing 2 keys and 19 values 
+51993 INFO  org.reflections.Reflections: Reflections took 4 ms to scan 2 urls, producing 2 keys and 19 values 
+52002 INFO  org.reflections.Reflections: Reflections took 4 ms to scan 2 urls, producing 2 keys and 19 values 
+52368 INFO  org.reflections.Reflections: Reflections took 6 ms to scan 2 urls, producing 2 keys and 19 values 
+52378 INFO  org.reflections.Reflections: Reflections took 7 ms to scan 2 urls, producing 2 keys and 19 values 

@@ -20,7 +20,7 @@ after_test:
             $wc.UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path $_))
         }
   - gradlew bundledJar
-  - mv build/libs/alpha-bundled.jar alpha.jar
+  - mv alpha-cli-app/build/libs/alpha-cli-app-bundled.jar alpha.jar
 
 artifacts:
   path: alpha.jar
