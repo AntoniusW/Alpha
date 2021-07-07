@@ -92,6 +92,9 @@ public class ChoiceInfluenceManager implements Checkable {
 		assignment.registerCallbackOnChange(enabler);
 		assignment.registerCallbackOnChange(disabler);
 		ChoicePoint choicePoint = new ChoicePoint(atom, enabler, disabler);
+		assignment.getAtomCallbackManager().recordCallback(atom, choicePoint);
+		assignment.getAtomCallbackManager().recordCallback(enabler, choicePoint);
+		assignment.getAtomCallbackManager().recordCallback(disabler, choicePoint);
 		influencers[atom] = choicePoint;
 		influencers[enabler] = choicePoint;
 		influencers[disabler] = choicePoint;
@@ -150,16 +153,6 @@ public class ChoiceInfluenceManager implements Checkable {
 		this.checksEnabled = checksEnabled;
 	}
 
-	void callbackOnChanged(int atom) {
-		if (LOGGER.isTraceEnabled()) {
-			LOGGER.trace("Callback received on influencer atom: {}", atom);
-		}
-		ChoicePoint choicePoint = influencers[atom];
-		if (choicePoint != null) {
-			choicePoint.recomputeActive();
-		}
-	}
-
 	public void growForMaxAtomId(int maxAtomId) {
 		// Grow arrays only if needed.
 		if (influencers.length > maxAtomId) {
@@ -177,7 +170,7 @@ public class ChoiceInfluenceManager implements Checkable {
 		this.activityListener = listener;
 	}
 
-	private class ChoicePoint {
+	private class ChoicePoint implements AtomCallbackManager.AtomCallback {
 		final Integer atom;
 		final int enabler;
 		final int disabler;
@@ -199,6 +192,11 @@ public class ChoiceInfluenceManager implements Checkable {
 		private boolean isNotChosen() {
 			ThriceTruth atomTruth = assignment.getTruth(atom);
 			return atomTruth == null || atomTruth == MBT;
+		}
+
+		@Override
+		public void processCallback() {
+			recomputeActive();
 		}
 
 		void recomputeActive() {
@@ -228,7 +226,7 @@ public class ChoiceInfluenceManager implements Checkable {
 		}
 	}
 	
-	public static interface ActivityListener {
+	public interface ActivityListener {
 		void callbackOnChanged(int atom, boolean active);
 	}
 

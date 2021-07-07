@@ -45,22 +45,22 @@ public class OmigaBenchmarksTest extends AbstractSolverTests {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(OmigaBenchmarksTest.class);
 
-	@Test(timeout = 10000)
+	@Test(timeout = 20000)
 	public void test3Col_10_18() throws IOException {
 		test("3col", "3col-10-18.txt");
 	}
 
-	@Test(timeout = 10000)
+	@Test(timeout = 20000)
 	public void test3Col_20_38() throws IOException {
 		test("3col", "3col-20-38.txt");
 	}
 
-	@Test(timeout = 15000)
+	@Test(timeout = 25000)
 	public void testCutedge_100_30() throws IOException {
 		test("cutedge", "cutedge-100-30.txt");
 	}
 
-	@Test(timeout = 15000)
+	@Test(timeout = 25000)
 	public void testCutedge_100_50() throws IOException {
 		test("cutedge", "cutedge-100-50.txt");
 	}
@@ -77,7 +77,7 @@ public class OmigaBenchmarksTest extends AbstractSolverTests {
 		test("locstrat", "locstrat-400.txt");
 	}
 
-	@Test(timeout = 15000)
+	@Test(timeout = 25000)
 	public void testReach_1() throws IOException {
 		ignoreTestForNaiveSolver();
 		ignoreNonDefaultDomainIndependentHeuristics();

@@ -40,7 +40,7 @@ aggregate_element : basic_terms? (COLON naf_literals?)?;
 
 aggregate_function : AGGREGATE_COUNT | AGGREGATE_MAX | AGGREGATE_MIN | AGGREGATE_SUM;
 
-weight_at_level : term (AT term)? (COMMA terms)?;
+weight_at_level : weight=term (AT level=term)? (COMMA termlist=terms)?;
 
 naf_literals : naf_literal (COMMA naf_literals)?;
 

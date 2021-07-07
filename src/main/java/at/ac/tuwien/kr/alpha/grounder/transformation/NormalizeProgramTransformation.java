@@ -26,6 +26,8 @@ public class NormalizeProgramTransformation extends ProgramTransformation<InputP
 		tmpPrg = new CardinalityNormalization(!this.useNormalizationGrid).apply(tmpPrg);
 		// Transform sum aggregates.
 		tmpPrg = new SumNormalization().apply(tmpPrg);
+		// Transform weak constraints.
+		tmpPrg = new WeakConstraintNormalization().apply(tmpPrg);
 		// Transform enumeration atoms.
 		tmpPrg = new EnumerationRewriting().apply(tmpPrg);
 		EnumerationAtom.resetEnumerations();

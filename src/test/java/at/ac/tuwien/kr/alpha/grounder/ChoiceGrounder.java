@@ -45,11 +45,13 @@ import at.ac.tuwien.kr.alpha.grounder.atoms.ChoiceAtom;
 import at.ac.tuwien.kr.alpha.grounder.atoms.RuleAtom;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
@@ -61,6 +63,7 @@ import static at.ac.tuwien.kr.alpha.Util.entry;
 import static at.ac.tuwien.kr.alpha.common.NoGood.headFirst;
 import static at.ac.tuwien.kr.alpha.common.NoGoodTest.fromOldLiterals;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
 
 /**
@@ -182,7 +185,17 @@ public class ChoiceGrounder implements Grounder {
 			return new ImmutablePair<>(new HashMap<>(), new HashMap<>());
 		}
 	}
-	
+
+	@Override
+	public boolean inputProgramContainsWeakConstraints() {
+		return false;
+	}
+
+	@Override
+	public List<Triple<Integer, Integer, Integer>> getWeakConstraintInformation() {
+		return emptyList();
+	}
+
 	@Override
 	public Map<Integer, Set<Integer>> getHeadsToBodies() {
 		return Collections.emptyMap();

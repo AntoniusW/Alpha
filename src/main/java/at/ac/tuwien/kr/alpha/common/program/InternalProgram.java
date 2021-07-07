@@ -6,7 +6,8 @@ import at.ac.tuwien.kr.alpha.common.rule.InternalRule;
 import at.ac.tuwien.kr.alpha.common.rule.NormalRule;
 import at.ac.tuwien.kr.alpha.grounder.FactIntervalEvaluator;
 import at.ac.tuwien.kr.alpha.grounder.Instance;
-import org.apache.commons.lang3.tuple.ImmutablePair;
+import at.ac.tuwien.kr.alpha.grounder.atoms.WeakConstraintAtom;
+import org.apache.commons.lang3.tuple.ImmutableTriple;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,19 +25,22 @@ import java.util.Map;
  */
 public class InternalProgram extends AbstractProgram<InternalRule> {
 
+	private final boolean containsWeakConstraints;
 	private final Map<Predicate, LinkedHashSet<InternalRule>> predicateDefiningRules = new LinkedHashMap<>();
 	private final Map<Predicate, LinkedHashSet<Instance>> factsByPredicate = new LinkedHashMap<>();
 	private final Map<Integer, InternalRule> rulesById = new LinkedHashMap<>();
 
-	public InternalProgram(List<InternalRule> rules, List<Atom> facts) {
+	public InternalProgram(List<InternalRule> rules, List<Atom> facts, boolean containsWeakConstraints) {
 		super(rules, facts, null);
+		this.containsWeakConstraints = containsWeakConstraints;
 		recordFacts(facts);
 		recordRules(rules);
 	}
 
-	static ImmutablePair<List<InternalRule>, List<Atom>> internalizeRulesAndFacts(NormalProgram normalProgram) {
+	static ImmutableTriple<List<InternalRule>, List<Atom>, Boolean> internalizeRulesAndFacts(NormalProgram normalProgram) {
 		List<InternalRule> internalRules = new ArrayList<>();
 		List<Atom> facts = new ArrayList<>(normalProgram.getFacts());
+		boolean containsWeakConstraints = false;
 		for (NormalRule r : normalProgram.getRules()) {
 			if (r.getBody().isEmpty()) {
 				if (!r.getHead().isGround()) {
@@ -45,14 +49,17 @@ public class InternalProgram extends AbstractProgram<InternalRule> {
 				facts.add(r.getHeadAtom());
 			} else {
 				internalRules.add(InternalRule.fromNormalRule(r));
+				if (r.getHeadAtom() instanceof WeakConstraintAtom) {
+					containsWeakConstraints = true;
+				}
 			}
 		}
-		return new ImmutablePair<>(internalRules, facts);
+		return new ImmutableTriple<>(internalRules, facts, containsWeakConstraints);
 	}
 
 	public static InternalProgram fromNormalProgram(NormalProgram normalProgram) {
-		ImmutablePair<List<InternalRule>, List<Atom>> rulesAndFacts = InternalProgram.internalizeRulesAndFacts(normalProgram);
-		return new InternalProgram(rulesAndFacts.left, rulesAndFacts.right);
+		ImmutableTriple<List<InternalRule>, List<Atom>, Boolean> rulesAndFacts = InternalProgram.internalizeRulesAndFacts(normalProgram);
+		return new InternalProgram(rulesAndFacts.left, rulesAndFacts.middle, rulesAndFacts.right);
 	}
 
 	private void recordFacts(List<Atom> facts) {
@@ -90,4 +97,7 @@ public class InternalProgram extends AbstractProgram<InternalRule> {
 		return Collections.unmodifiableMap(rulesById);
 	}
 
+	public boolean containsWeakConstraints() {
+		return containsWeakConstraints;
+	}
 }

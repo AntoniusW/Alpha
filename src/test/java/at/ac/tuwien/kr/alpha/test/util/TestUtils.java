@@ -2,7 +2,9 @@ package at.ac.tuwien.kr.alpha.test.util;
 
 import at.ac.tuwien.kr.alpha.AnswerSetsParser;
 import at.ac.tuwien.kr.alpha.common.AnswerSet;
+import at.ac.tuwien.kr.alpha.common.BasicAnswerSet;
 import at.ac.tuwien.kr.alpha.common.Predicate;
+import at.ac.tuwien.kr.alpha.common.WeightedAnswerSet;
 import at.ac.tuwien.kr.alpha.common.atoms.Atom;
 import at.ac.tuwien.kr.alpha.common.atoms.BasicAtom;
 import at.ac.tuwien.kr.alpha.common.program.AbstractProgram;
@@ -16,6 +18,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.StringJoiner;
+import java.util.TreeMap;
 
 import static java.util.Collections.emptySet;
 
@@ -95,4 +98,42 @@ public class TestUtils {
 		return new BasicAtom(pred, trms);
 	}
 
+	public static WeightedAnswerSet weightedAnswerSetFromStrings(String basicAnswerSetAsString, String weightAtLevelsAsString) {
+		BasicAnswerSet basicAnswerSet = (BasicAnswerSet) AnswerSetsParser.parse("{ " + basicAnswerSetAsString + " }").iterator().next();
+		// Extract weights at levels from given string.
+		String[] weightsAtLevels = weightAtLevelsAsString.split(", ");
+		TreeMap<Integer, Integer> weightAtLevelsTreeMap = new TreeMap<>();
+		for (String weightsAtLevel : weightsAtLevels) {
+			String[] wAtL = weightsAtLevel.split("@");
+			weightAtLevelsTreeMap.put(Integer.parseInt(wAtL[1]), Integer.parseInt(wAtL[0]));
+		}
+		return new WeightedAnswerSet(basicAnswerSet, weightAtLevelsTreeMap);
+	}
+
+	public static void assertOptimumAnswerSetEquals(String expectedOptimumAnswerSet, String expectedWeightsAtLevels, Set<AnswerSet> actual) {
+		WeightedAnswerSet optimumAnswerSet = weightedAnswerSetFromStrings(expectedOptimumAnswerSet, expectedWeightsAtLevels);
+
+		// Check the optimum is contained in the set of actual answer sets.
+		if (!actual.contains(optimumAnswerSet)) {
+			throw new AssertionError("Expected optimum answer set is not contained in actual.\n" +
+				"Expected optimum answer set: " + optimumAnswerSet + "\n" +
+				"Actual answer sets: " + actual);
+		}
+		// Ensure that there is no better answer set contained in the actual answer sets.
+		for (AnswerSet actualAnswerSet : actual) {
+			if (actualAnswerSet.equals(optimumAnswerSet)) {
+				// Skip optimum itself.
+				continue;
+			}
+			if (!(actualAnswerSet instanceof WeightedAnswerSet)) {
+				throw new AssertionError("Expecting weighted answer sets but obtained answer set is not: " + actualAnswerSet);
+			}
+			WeightedAnswerSet actualWeightedAnswerSet = (WeightedAnswerSet) actualAnswerSet;
+			if (optimumAnswerSet.compareWeights(actualWeightedAnswerSet) >= 0) {
+				throw new AssertionError("Actual answer set is better than expected one.\n" +
+					"Expected: " + optimumAnswerSet + "\n" +
+					"Actual: " + actualWeightedAnswerSet);
+			}
+		}
+	}
 }

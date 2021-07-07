@@ -128,7 +128,7 @@ public class Alpha {
 		LOGGER.debug("Preprocessing InternalProgram!");
 		InternalProgram retVal = program;
 		if (config.isEvaluateStratifiedPart()) {
-			AnalyzedProgram analyzed = new AnalyzedProgram(program.getRules(), program.getFacts());
+			AnalyzedProgram analyzed = new AnalyzedProgram(program.getRules(), program.getFacts(), program.containsWeakConstraints());
 			retVal = new StratifiedEvaluation().apply(analyzed);
 		}
 		return retVal;

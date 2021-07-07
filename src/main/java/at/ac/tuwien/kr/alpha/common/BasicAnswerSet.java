@@ -39,6 +39,10 @@ public class BasicAnswerSet implements AnswerSet {
 		return predicates.isEmpty();
 	}
 
+	protected Map<Predicate, SortedSet<Atom>> getPredicateInstances() {
+		return predicateInstances;
+	}
+
 	@Override
 	public String toString() {
 		if (predicates.isEmpty()) {

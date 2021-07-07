@@ -33,7 +33,9 @@ import at.ac.tuwien.kr.alpha.common.IntIterator;
 import at.ac.tuwien.kr.alpha.common.NoGood;
 import at.ac.tuwien.kr.alpha.grounder.atoms.RuleAtom;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -59,6 +61,20 @@ public interface Grounder {
 	 * and choiceOff maps atoms (choice points) to their disabling atoms.
 	 */
 	Pair<Map<Integer, Integer>, Map<Integer, Integer>> getChoiceAtoms();
+
+	/**
+	 * States whether the input program given to the grounder contains weak constraints (which enables optimization).
+	 * @return true if the input program to the grounder contains weak constraints.
+	 */
+	boolean inputProgramContainsWeakConstraints();
+
+	/**
+	 * Returns the atomId of atoms representing weak constraints and the respective weights and levels.
+	 * Must be preceded by a call to getNoGoods().
+	 * @return a list of triples (atomId, weight, level) where atomId is the atom that becomes true whenever the
+	 * corresponding weak constraint is violated.
+	 */
+	List<Triple<Integer, Integer, Integer>> getWeakConstraintInformation();
 
 	/**
 	 * Updates the grounder with atoms assigned a positive truth value.

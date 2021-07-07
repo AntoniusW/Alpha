@@ -27,19 +27,6 @@
  */
 package at.ac.tuwien.kr.alpha.grounder;
 
-import static at.ac.tuwien.kr.alpha.common.Literals.atomOf;
-import static at.ac.tuwien.kr.alpha.common.Literals.atomToLiteral;
-import static at.ac.tuwien.kr.alpha.common.Literals.negateLiteral;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import at.ac.tuwien.kr.alpha.common.AtomStore;
 import at.ac.tuwien.kr.alpha.common.NoGood;
 import at.ac.tuwien.kr.alpha.common.Predicate;
@@ -50,6 +37,20 @@ import at.ac.tuwien.kr.alpha.common.program.InternalProgram;
 import at.ac.tuwien.kr.alpha.common.rule.InternalRule;
 import at.ac.tuwien.kr.alpha.grounder.atoms.EnumerationAtom;
 import at.ac.tuwien.kr.alpha.grounder.atoms.RuleAtom;
+import at.ac.tuwien.kr.alpha.grounder.atoms.WeakConstraintAtom;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import static at.ac.tuwien.kr.alpha.common.Literals.atomOf;
+import static at.ac.tuwien.kr.alpha.common.Literals.atomToLiteral;
+import static at.ac.tuwien.kr.alpha.common.Literals.negateLiteral;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 
 /**
  * Class to generate ground NoGoods out of non-ground rules and grounding substitutions.
@@ -58,13 +59,15 @@ import at.ac.tuwien.kr.alpha.grounder.atoms.RuleAtom;
 public class NoGoodGenerator {
 	private final AtomStore atomStore;
 	private final ChoiceRecorder choiceRecorder;
+	private final WeakConstraintRecorder weakConstraintRecorder;
 	private final Map<Predicate, LinkedHashSet<Instance>> factsFromProgram;
 	private final InternalProgram programAnalysis;
 	private final Set<InternalRule> uniqueGroundRulePerGroundHead;
 
-	NoGoodGenerator(AtomStore atomStore, ChoiceRecorder recorder, Map<Predicate, LinkedHashSet<Instance>> factsFromProgram, InternalProgram programAnalysis, Set<InternalRule> uniqueGroundRulePerGroundHead) {
+	NoGoodGenerator(AtomStore atomStore, ChoiceRecorder recorder, WeakConstraintRecorder weakConstraintRecorder, Map<Predicate, LinkedHashSet<Instance>> factsFromProgram, InternalProgram programAnalysis, Set<InternalRule> uniqueGroundRulePerGroundHead) {
 		this.atomStore = atomStore;
 		this.choiceRecorder = recorder;
+		this.weakConstraintRecorder = weakConstraintRecorder;
 		this.factsFromProgram = factsFromProgram;
 		this.programAnalysis = programAnalysis;
 		this.uniqueGroundRulePerGroundHead = uniqueGroundRulePerGroundHead;
@@ -97,6 +100,17 @@ public class NoGoodGenerator {
 
 		final Atom groundHeadAtom = nonGroundRule.getHeadAtom().substitute(substitution);
 		final int headId = atomStore.putIfAbsent(groundHeadAtom);
+
+		if (groundHeadAtom instanceof WeakConstraintAtom) {
+			WeakConstraintAtom weakConstraintAtom = (WeakConstraintAtom) groundHeadAtom;
+			// Treat weak constraints: only generate nogood for the if-direction (body satisfied causes head to be true).
+			NoGood wcRule = NoGood.fromBodyInternal(posLiterals, negLiterals, atomToLiteral(headId));
+			result.add(wcRule);
+
+			// Record weak constraint association.
+			weakConstraintRecorder.addWeakConstraint(headId, weakConstraintAtom.getWeight(), weakConstraintAtom.getLevel());
+			return result;
+		}
 		
 		// Prepare atom representing the rule body.
 		final RuleAtom bodyAtom = new RuleAtom(nonGroundRule, substitution);

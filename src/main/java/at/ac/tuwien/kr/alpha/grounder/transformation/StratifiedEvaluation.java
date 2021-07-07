@@ -96,7 +96,7 @@ public class StratifiedEvaluation extends ProgramTransformation<AnalyzedProgram,
 				.forEach((entry) -> outputRules.add(entry.getValue()));
 
 		// NOTE: if InternalProgram requires solved rules, they should be added here.
-		return new InternalProgram(outputRules, additionalFacts);
+		return new InternalProgram(outputRules, additionalFacts, inputProgram.containsWeakConstraints());
 	}
 
 	private void evaluateComponent(SCComponent comp) {

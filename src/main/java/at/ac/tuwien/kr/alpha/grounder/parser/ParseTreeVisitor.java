@@ -47,6 +47,7 @@ import at.ac.tuwien.kr.alpha.common.atoms.Literal;
 import at.ac.tuwien.kr.alpha.common.fixedinterpretations.PredicateInterpretation;
 import at.ac.tuwien.kr.alpha.common.program.InputProgram;
 import at.ac.tuwien.kr.alpha.common.rule.BasicRule;
+import at.ac.tuwien.kr.alpha.common.rule.WeakConstraint;
 import at.ac.tuwien.kr.alpha.common.rule.head.ChoiceHead;
 import at.ac.tuwien.kr.alpha.common.rule.head.Head;
 import at.ac.tuwien.kr.alpha.common.rule.head.NormalHead;
@@ -69,6 +70,7 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import static at.ac.tuwien.kr.alpha.Util.oops;
 import static java.util.Collections.emptyList;
 
 /**
@@ -202,7 +204,19 @@ public class ParseTreeVisitor extends ASPCore2BaseVisitor<Object> {
 	@Override
 	public Object visitStatement_weightConstraint(ASPCore2Parser.Statement_weightConstraintContext ctx) {
 		// WCONS body? DOT SQUARE_OPEN weight_at_level SQUARE_CLOSE
-		throw notSupported(ctx);
+		List<Literal> bodyLiterals = ctx.body() != null ? visitBody(ctx.body()) : emptyList();
+		Term weight = (Term)visit(ctx.weight_at_level().weight);
+		Term level = ctx.weight_at_level().level != null ? (Term)visit(ctx.weight_at_level().level) : null;
+		List<Term> termList = ctx.weight_at_level().termlist != null ? visitTerms(ctx.weight_at_level().termlist) : null;
+		programBuilder.addRule(new WeakConstraint(bodyLiterals, weight, level, termList));
+		return null;
+	}
+
+	@Override
+	public Object visitWeight_at_level(ASPCore2Parser.Weight_at_levelContext ctx) {
+		// weight_at_level : term (AT term)? (COMMA terms)?;
+		// Construction fully done at visitStatement_weightConstraint, should never descend to this.
+		throw oops("ParserTreeVisitor called method visitWeight_at_level.");
 	}
 
 	@Override

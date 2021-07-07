@@ -54,6 +54,7 @@ import at.ac.tuwien.kr.alpha.grounder.instantiation.LiteralInstantiator;
 import at.ac.tuwien.kr.alpha.grounder.structure.AnalyzeUnjustified;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,6 +87,7 @@ public class NaiveGrounder extends BridgedGrounder implements ProgramAnalyzingGr
 	private final NogoodRegistry registry = new NogoodRegistry();
 	final NoGoodGenerator noGoodGenerator;
 	private final ChoiceRecorder choiceRecorder;
+	private final WeakConstraintRecorder weakConstraintRecorder;
 	private final InternalProgram program;
 	private final AnalyzeUnjustified analyzeUnjustified;
 
@@ -108,8 +110,8 @@ public class NaiveGrounder extends BridgedGrounder implements ProgramAnalyzingGr
 		this(program, atomStore, new GrounderHeuristicsConfiguration(), debugInternalChecks, bridges);
 	}
 
-	private NaiveGrounder(InternalProgram program, AtomStore atomStore, GrounderHeuristicsConfiguration heuristicsConfiguration, boolean debugInternalChecks,
-			Bridge... bridges) {
+	private NaiveGrounder(InternalProgram program, AtomStore atomStore, GrounderHeuristicsConfiguration heuristicsConfiguration,
+				boolean debugInternalChecks, Bridge... bridges) {
 		this(program, atomStore, p -> true, heuristicsConfiguration, debugInternalChecks, bridges);
 	}
 
@@ -131,8 +133,8 @@ public class NaiveGrounder extends BridgedGrounder implements ProgramAnalyzingGr
 
 		final Set<InternalRule> uniqueGroundRulePerGroundHead = getRulesWithUniqueHead();
 		choiceRecorder = new ChoiceRecorder(atomStore);
-		noGoodGenerator = new NoGoodGenerator(atomStore, choiceRecorder, factsFromProgram, this.program, uniqueGroundRulePerGroundHead);
-
+		weakConstraintRecorder = new WeakConstraintRecorder();
+		noGoodGenerator = new NoGoodGenerator(atomStore, choiceRecorder, weakConstraintRecorder, factsFromProgram, this.program, uniqueGroundRulePerGroundHead);
 		this.debugInternalChecks = debugInternalChecks;
 
 		// Initialize RuleInstantiator and instantiation strategy. Note that the instantiation strategy also
@@ -200,7 +202,7 @@ public class NaiveGrounder extends BridgedGrounder implements ProgramAnalyzingGr
 			}
 
 			// Collect head and body variables.
-			HashSet<VariableTerm> occurringVariablesHead = new HashSet<>(headAtom.toLiteral().getBindingVariables());
+			HashSet<VariableTerm> occurringVariablesHead = new HashSet<>(headAtom.getOccurringVariables());
 			HashSet<VariableTerm> occurringVariablesBody = new HashSet<>();
 			for (Literal lit : nonGroundRule.getPositiveBody()) {
 				occurringVariablesBody.addAll(lit.getBindingVariables());
@@ -217,7 +219,7 @@ public class NaiveGrounder extends BridgedGrounder implements ProgramAnalyzingGr
 
 	/**
 	 * Registers a starting literal of a NonGroundRule at its corresponding working memory.
-	 * 
+	 *
 	 * @param nonGroundRule the rule in which the literal occurs.
 	 */
 	private void registerLiteralAtWorkingMemory(Literal literal, InternalRule nonGroundRule) {
@@ -287,7 +289,7 @@ public class NaiveGrounder extends BridgedGrounder implements ProgramAnalyzingGr
 
 	/**
 	 * Prepares facts of the input program for joining and derives all NoGoods representing ground rules. May only be called once.
-	 * 
+	 *
 	 * @return
 	 */
 	protected HashMap<Integer, NoGood> bootstrap() {
@@ -425,8 +427,8 @@ public class NaiveGrounder extends BridgedGrounder implements ProgramAnalyzingGr
 			for (int i = 0; i < bindingResult.size(); i++) {
 				Integer numberOfUnassignedPositiveBodyAtoms = bindingResult.getNumbersOfUnassignedPositiveBodyAtoms().get(i);
 				if (numberOfUnassignedPositiveBodyAtoms > 0) {
-					LOGGER.debug("Grounded rule in which {} positive atoms are still unassigned: {} (substitution: {})", numberOfUnassignedPositiveBodyAtoms,
-							rule, bindingResult.getGeneratedSubstitutions().get(i));
+					LOGGER.debug("Grounded rule in which {} positive atoms are still unassigned: {} (substitution: {})",
+						numberOfUnassignedPositiveBodyAtoms, rule, bindingResult.getGeneratedSubstitutions().get(i));
 				}
 			}
 		}
@@ -543,10 +545,9 @@ public class NaiveGrounder extends BridgedGrounder implements ProgramAnalyzingGr
 				 * use, push the current literal to the end of the grounding order and proceed with the next one, otherwise return an empty BindingResult.
 				 */
 				if (originalTolerance > 0) {
-					LOGGER.trace(
-							"No substitutions yielded by literal instantiator for literal {}, but using permissive heuristic, therefore pushing the literal back.",
-							currentLiteral);
-					// This occurs when the grounder heuristic in use is a "permissive" one,
+					LOGGER.trace("No substitutions yielded by literal instantiator for literal {}," +
+						" but using permissive heuristic, therefore pushing the literal back.", currentLiteral);
+					// This occurs when the grounder heuristic in use is a "permissive" one, 
 					// i.e. it is deemed acceptable to have ground rules where a number of body atoms are not yet assigned a truth value by the solver.
 					return pushBackAndBindNextAtomInRule(groundingOrder, orderPosition, originalTolerance, remainingTolerance, partialSubstitution);
 				} else {
@@ -567,8 +568,18 @@ public class NaiveGrounder extends BridgedGrounder implements ProgramAnalyzingGr
 	}
 
 	@Override
+	public boolean inputProgramContainsWeakConstraints() {
+		return program.containsWeakConstraints();
+	}
+
+	@Override
 	public Map<Integer, Set<Integer>> getHeadsToBodies() {
 		return choiceRecorder.getAndResetHeadsToBodies();
+	}
+
+	@Override
+	public List<Triple<Integer, Integer, Integer>> getWeakConstraintInformation() {
+		return weakConstraintRecorder.getAndResetWeakConstraintAtomWeightLevels();
 	}
 
 	@Override
