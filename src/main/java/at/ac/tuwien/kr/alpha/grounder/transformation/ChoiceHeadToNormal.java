@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2017-2018, the Alpha Team.
+/*
+ * Copyright (c) 2017-2020, the Alpha Team.
  * All rights reserved.
  *
  * Additional changes made by Siemens.
@@ -79,7 +79,7 @@ public class ChoiceHeadToNormal extends ProgramTransformation<InputProgram, Inpu
 			for (ChoiceHead.ChoiceElement choiceElement : choiceHead.getChoiceElements()) {
 				// Create two guessing rules for each choiceElement.
 
-				// Construct common body to both rules.
+				// Construct body common to both rules and constraint.
 				Atom head = choiceElement.choiceAtom;
 				List<Literal> ruleBody = new ArrayList<>(rule.getBody());
 				ruleBody.addAll(choiceElement.conditionLiterals);
@@ -99,12 +99,18 @@ public class ChoiceHeadToNormal extends ProgramTransformation<InputProgram, Inpu
 
 				// Construct two guessing rules.
 				List<Literal> guessingRuleBodyWithNegHead = new ArrayList<>(ruleBody);
-				guessingRuleBodyWithNegHead.add(new BasicAtom(head.getPredicate(), head.getTerms()).toLiteral(false));
+				guessingRuleBodyWithNegHead.add(head.toLiteral(false));
 				additionalRules.add(new BasicRule(new NormalHead(negHead), guessingRuleBodyWithNegHead));
 
 				List<Literal> guessingRuleBodyWithHead = new ArrayList<>(ruleBody);
-				guessingRuleBodyWithHead.add(new BasicAtom(negPredicate, headTerms).toLiteral(false));
+				guessingRuleBodyWithHead.add(negHead.toLiteral(false));
 				additionalRules.add(new BasicRule(new NormalHead(head), guessingRuleBodyWithHead));
+
+				// Construct a constraint: complementary atoms may not be true simultaneously.
+				List<Literal> bodyOfConstraint = new ArrayList<>(ruleBody);
+				bodyOfConstraint.add(head.toLiteral());
+				bodyOfConstraint.add(negHead.toLiteral());
+				additionalRules.add(new BasicRule(null, bodyOfConstraint));
 
 				// TODO: when cardinality constraints are possible, process the boundaries by adding a constraint with a cardinality check.
 			}
