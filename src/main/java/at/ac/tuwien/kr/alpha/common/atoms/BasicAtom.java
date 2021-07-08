@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2016-2020, the Alpha Team.
+/*
+ * Copyright (c) 2016-2021, the Alpha Team.
  * All rights reserved.
  *
  * Additional changes made by Siemens.
@@ -28,9 +28,11 @@
 package at.ac.tuwien.kr.alpha.common.atoms;
 
 import at.ac.tuwien.kr.alpha.common.Predicate;
+import at.ac.tuwien.kr.alpha.common.terms.FunctionTerm;
 import at.ac.tuwien.kr.alpha.common.terms.Term;
 import at.ac.tuwien.kr.alpha.grounder.Substitution;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -42,8 +44,8 @@ import static at.ac.tuwien.kr.alpha.Util.join;
  * Represents ordinary ASP atoms.
  */
 public class BasicAtom extends Atom implements VariableNormalizableAtom {
-	private final Predicate predicate;
-	private final List<Term> terms;
+	protected final Predicate predicate;
+	protected final List<Term> terms;
 	private final boolean ground;
 
 	/**
@@ -106,6 +108,11 @@ public class BasicAtom extends Atom implements VariableNormalizableAtom {
 	@Override
 	public BasicLiteral toLiteral(boolean positive) {
 		return new BasicLiteral(this, positive);
+	}
+	
+	@Override
+	public FunctionTerm toFunctionTerm() {
+		return FunctionTerm.getInstance(predicate.getName(), new ArrayList<>(terms));
 	}
 
 	@Override

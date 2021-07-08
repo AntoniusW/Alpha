@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2016-2017, the Alpha Team.
+ * Copyright (c) 2016-2018, the Alpha Team.
  * All rights reserved.
  *
  * Additional changes made by Siemens.
@@ -31,18 +31,17 @@ import at.ac.tuwien.kr.alpha.common.AtomStore;
 import at.ac.tuwien.kr.alpha.config.SystemConfig;
 import at.ac.tuwien.kr.alpha.grounder.Grounder;
 import at.ac.tuwien.kr.alpha.solver.heuristics.HeuristicsConfiguration;
-import at.ac.tuwien.kr.alpha.solver.heuristics.HeuristicsConfigurationBuilder;
 
 import java.util.Random;
 
 public final class SolverFactory {
-	public static Solver getInstance(SystemConfig config, AtomStore atomStore, Grounder grounder) {
+	public static Solver getInstance(SystemConfig config, AtomStore atomStore, Grounder grounder, HeuristicsConfiguration heuristicsConfiguration) {
 		final String solverName = config.getSolverName();
 		final String nogoodStoreName = config.getNogoodStoreName();
 		final Random random = new Random(config.getSeed());
 		final boolean debugInternalChecks = config.isDebugInternalChecks();
-		final HeuristicsConfiguration heuristicsConfiguration = buildHeuristicsConfiguration(config);
-		final WritableAssignment assignment = new TrailAssignment(atomStore, debugInternalChecks);
+		final TrailAssignment assignment = new TrailAssignment(atomStore, debugInternalChecks);
+		assignment.setChecksEnabled(debugInternalChecks);
 
 		NoGoodStore store;
 
@@ -61,16 +60,10 @@ public final class SolverFactory {
 			case "naive" :
 				return new NaiveSolver(atomStore, grounder);
 			case "default":
-				return new DefaultSolver(atomStore, grounder, store, assignment, random, config, heuristicsConfiguration);
+				DefaultSolver solver = new DefaultSolver(atomStore, grounder, store, assignment, random, config, heuristicsConfiguration);
+				solver.setChecksEnabled(debugInternalChecks);
+				return solver;
 		}
 		throw new IllegalArgumentException("Unknown solver requested.");
-	}
-
-	private static HeuristicsConfiguration buildHeuristicsConfiguration(SystemConfig config) {
-		HeuristicsConfigurationBuilder heuristicsConfigurationBuilder = HeuristicsConfiguration.builder();
-		heuristicsConfigurationBuilder.setHeuristic(config.getBranchingHeuristic());
-		heuristicsConfigurationBuilder.setMomsStrategy(config.getMomsStrategy());
-		heuristicsConfigurationBuilder.setReplayChoices(config.getReplayChoices());
-		return heuristicsConfigurationBuilder.build();
 	}
 }

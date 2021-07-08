@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2016-2019, the Alpha Team.
+/*
+ * Copyright (c) 2016-2021, the Alpha Team.
  * All rights reserved.
  *
  * Additional changes made by Siemens.
@@ -69,7 +69,7 @@ public class TrailAssignment implements WritableAssignment, Checkable {
 	};
 
 	private final AtomStore atomStore;
-	private ChoiceManager choiceManagerCallback;
+	private ChoiceManager choiceManager;
 
 	/**
 	 * Contains for each known atom a value whose two least
@@ -140,7 +140,7 @@ public class TrailAssignment implements WritableAssignment, Checkable {
 
 	@Override
 	public void setCallback(ChoiceManager choiceManager) {
-		choiceManagerCallback = choiceManager;
+		this.choiceManager = choiceManager;
 	}
 
 	@Override
@@ -204,7 +204,7 @@ public class TrailAssignment implements WritableAssignment, Checkable {
 
 	private void informCallback(int atom) {
 		if (callbackUponChange[atom]) {
-			choiceManagerCallback.callbackOnChanged(atom);
+			choiceManager.callbackOnChanged(atom);
 		}
 	}
 
@@ -564,6 +564,14 @@ public class TrailAssignment implements WritableAssignment, Checkable {
 			newlyAssignedAtoms.add(atomOf(trail[trailIndex]));
 		}
 		return newlyAssignedAtoms.size();
+	}
+
+	@Override
+	public int getNumberOfActiveChoicePoints() {
+		if (choiceManager == null) {
+			throw new UnsupportedOperationException("No ChoiceManager known by TrailAssignment");
+		}
+		return choiceManager.getNumberOfActiveChoicePoints();
 	}
 
 	@Override

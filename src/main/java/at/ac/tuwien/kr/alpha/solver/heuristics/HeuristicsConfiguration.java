@@ -1,17 +1,17 @@
 /**
  * Copyright (c) 2018-2019 Siemens AG
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1) Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2) Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -34,34 +34,32 @@ import java.util.List;
  * Configuration class holding parameters for {@link BranchingHeuristic}s.
  */
 public class HeuristicsConfiguration {
-	
-	private Heuristic heuristic;
-	private Strategy momsStrategy;
-	private List<Integer> replayChoices;
+
+	private final Heuristic heuristic;
+	private final boolean respectDomspecHeuristics;
+	private final Strategy momsStrategy;
+	private final List<Integer> replayChoices;
+
 	/**
 	 * @param heuristic
+	 * @param respectDomspecHeuristics
 	 * @param momsStrategy
 	 * @param replayChoices
 	 */
-	public HeuristicsConfiguration(Heuristic heuristic, Strategy momsStrategy, List<Integer> replayChoices) {
+	public HeuristicsConfiguration(Heuristic heuristic, boolean respectDomspecHeuristics, Strategy momsStrategy, List<Integer> replayChoices) {
 		super();
 		this.heuristic = heuristic;
+		this.respectDomspecHeuristics = respectDomspecHeuristics;
 		this.momsStrategy = momsStrategy;
 		this.replayChoices = replayChoices;
 	}
 
-	/**
-	 * @return the heuristic
-	 */
 	public Heuristic getHeuristic() {
 		return heuristic;
 	}
 
-	/**
-	 * @param heuristic the heuristic to set
-	 */
-	public void setHeuristic(Heuristic heuristic) {
-		this.heuristic = heuristic;
+	public boolean isRespectDomspecHeuristics() {
+		return respectDomspecHeuristics;
 	}
 
 	/**
@@ -70,30 +68,19 @@ public class HeuristicsConfiguration {
 	public Strategy getMomsStrategy() {
 		return momsStrategy;
 	}
-
-	/**
-	 * @param momsStrategy the momsStrategy to set
-	 */
-	public void setMomsStrategy(Strategy momsStrategy) {
-		this.momsStrategy = momsStrategy;
-	}
-	
-	/**
+/**
 	 * @return the replayChoices
 	 */
 	public List<Integer> getReplayChoices() {
 		return replayChoices;
 	}
 
-	/**
-	 * @param replayChoices the replayChoices to set
-	 */
-	public void setReplayChoices(List<Integer> replayChoices) {
-		this.replayChoices = replayChoices;
-	}
-
 	public static HeuristicsConfigurationBuilder builder() {
 		return new HeuristicsConfigurationBuilder();
 	}
 
+	@Override
+	public String toString() {
+		return heuristic.toString() + ", respectDomspecHeuristics=" + respectDomspecHeuristics + ", momsStrategy=" + momsStrategy;
+	}
 }

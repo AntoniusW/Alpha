@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2016-2018, the Alpha Team.
+ * Copyright (c) 2016-2019, the Alpha Team.
  * All rights reserved.
  *
  * Additional changes made by Siemens.
@@ -30,6 +30,7 @@ package at.ac.tuwien.kr.alpha.solver.learning;
 import at.ac.tuwien.kr.alpha.common.Assignment;
 import at.ac.tuwien.kr.alpha.common.AtomStore;
 import at.ac.tuwien.kr.alpha.common.NoGood;
+import at.ac.tuwien.kr.alpha.common.NoGoodCreator;
 import at.ac.tuwien.kr.alpha.solver.Antecedent;
 import at.ac.tuwien.kr.alpha.solver.TrailAssignment;
 import org.slf4j.Logger;
@@ -250,7 +251,7 @@ public class GroundConflictNoGoodLearner {
 
 		int[] learnedLiterals = minimizeLearnedLiterals(resolutionLiterals, seenAtoms);
 
-		NoGood learnedNoGood = NoGood.learnt(learnedLiterals);
+		NoGood learnedNoGood = NoGoodCreator.learnt(learnedLiterals);
 		if (LOGGER.isTraceEnabled()) {
 			LOGGER.trace("Learned NoGood is: {}", atomStore.noGoodToString(learnedNoGood));
 		}

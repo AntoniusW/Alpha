@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2016-2019, the Alpha Team.
+/*
+ * Copyright (c) 2016-2020, the Alpha Team.
  * All rights reserved.
  *
  * Additional changes made by Siemens.
@@ -39,10 +39,14 @@ import at.ac.tuwien.kr.alpha.common.Predicate;
 import at.ac.tuwien.kr.alpha.common.atoms.Atom;
 import at.ac.tuwien.kr.alpha.common.atoms.BasicAtom;
 import at.ac.tuwien.kr.alpha.common.atoms.Literal;
+import at.ac.tuwien.kr.alpha.common.heuristics.HeuristicDirectiveValues;
+import at.ac.tuwien.kr.alpha.common.program.Facts;
 import at.ac.tuwien.kr.alpha.common.program.InternalProgram;
 import at.ac.tuwien.kr.alpha.common.rule.InternalRule;
 import at.ac.tuwien.kr.alpha.common.terms.VariableTerm;
 import at.ac.tuwien.kr.alpha.grounder.atoms.ChoiceAtom;
+import at.ac.tuwien.kr.alpha.grounder.atoms.HeuristicAtom;
+import at.ac.tuwien.kr.alpha.grounder.atoms.HeuristicInfluencerAtom;
 import at.ac.tuwien.kr.alpha.grounder.atoms.RuleAtom;
 import at.ac.tuwien.kr.alpha.grounder.bridges.Bridge;
 import at.ac.tuwien.kr.alpha.grounder.heuristics.GrounderHeuristicsConfiguration;
@@ -52,6 +56,7 @@ import at.ac.tuwien.kr.alpha.grounder.instantiation.DefaultLazyGroundingInstanti
 import at.ac.tuwien.kr.alpha.grounder.instantiation.LiteralInstantiationResult;
 import at.ac.tuwien.kr.alpha.grounder.instantiation.LiteralInstantiator;
 import at.ac.tuwien.kr.alpha.grounder.structure.AnalyzeUnjustified;
+import at.ac.tuwien.kr.alpha.solver.heuristics.HeuristicsConfiguration;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -72,6 +77,7 @@ import java.util.TreeSet;
 
 import static at.ac.tuwien.kr.alpha.Util.oops;
 import static at.ac.tuwien.kr.alpha.common.Literals.atomOf;
+import static java.util.Collections.singletonList;
 
 /**
  * A semi-naive grounder.
@@ -89,7 +95,7 @@ public class NaiveGrounder extends BridgedGrounder implements ProgramAnalyzingGr
 	private final InternalProgram program;
 	private final AnalyzeUnjustified analyzeUnjustified;
 
-	private final Map<Predicate, LinkedHashSet<Instance>> factsFromProgram;
+	private final Facts factsFromProgram;
 	private final Map<IndexedInstanceStorage, ArrayList<FirstBindingAtom>> rulesUsingPredicateWorkingMemory = new HashMap<>();
 	private final Map<Integer, InternalRule> knownNonGroundRules;
 
@@ -97,48 +103,45 @@ public class NaiveGrounder extends BridgedGrounder implements ProgramAnalyzingGr
 	private LinkedHashSet<Atom> removeAfterObtainingNewNoGoods = new LinkedHashSet<>();
 	private final boolean debugInternalChecks;
 
-	private final GrounderHeuristicsConfiguration heuristicsConfiguration;
+	private final GrounderHeuristicsConfiguration grounderHeuristicsConfiguration;
 
 	// Handles instantiation of literals, i.e. supplies ground substitutions for literals of non-ground rules
 	// according to the rules set by the LiteralInstantiationStrategy used by this grounder.
 	private final LiteralInstantiator ruleInstantiator;
 	private final DefaultLazyGroundingInstantiationStrategy instantiationStrategy;
 
-	public NaiveGrounder(InternalProgram program, AtomStore atomStore, boolean debugInternalChecks, Bridge... bridges) {
-		this(program, atomStore, new GrounderHeuristicsConfiguration(), debugInternalChecks, bridges);
+	public NaiveGrounder(InternalProgram program, AtomStore atomStore, HeuristicsConfiguration heuristicsConfiguration, boolean debugInternalChecks, Bridge... bridges) {
+		this(program, atomStore, heuristicsConfiguration, new GrounderHeuristicsConfiguration(), debugInternalChecks, bridges);
 	}
 
-	private NaiveGrounder(InternalProgram program, AtomStore atomStore, GrounderHeuristicsConfiguration heuristicsConfiguration, boolean debugInternalChecks,
+	private NaiveGrounder(InternalProgram program, AtomStore atomStore, HeuristicsConfiguration heuristicsConfiguration, GrounderHeuristicsConfiguration grounderHeuristicsConfiguration, boolean debugInternalChecks,
 			Bridge... bridges) {
-		this(program, atomStore, p -> true, heuristicsConfiguration, debugInternalChecks, bridges);
+		this(program, atomStore, heuristicsConfiguration, p -> true, grounderHeuristicsConfiguration, debugInternalChecks, bridges);
 	}
 
-	NaiveGrounder(InternalProgram program, AtomStore atomStore, java.util.function.Predicate<Predicate> filter,
-			GrounderHeuristicsConfiguration heuristicsConfiguration, boolean debugInternalChecks, Bridge... bridges) {
+	NaiveGrounder(InternalProgram program, AtomStore atomStore, HeuristicsConfiguration heuristicsConfiguration, java.util.function.Predicate<Predicate> filter,
+			GrounderHeuristicsConfiguration grounderHeuristicsConfiguration, boolean debugInternalChecks, Bridge... bridges) {
 		super(filter, bridges);
 		this.atomStore = atomStore;
-		this.heuristicsConfiguration = heuristicsConfiguration;
+		this.grounderHeuristicsConfiguration = grounderHeuristicsConfiguration;
 		LOGGER.debug("Grounder configuration: {}", heuristicsConfiguration);
 
 		this.program = program;
-
 		this.factsFromProgram = program.getFactsByPredicate();
 		this.knownNonGroundRules = program.getRulesById();
-
-		this.analyzeUnjustified = new AnalyzeUnjustified(this.program, this.atomStore, this.factsFromProgram);
+		this.analyzeUnjustified = new AnalyzeUnjustified(this.program, this.atomStore);
 
 		this.initializeFactsAndRules();
 
 		final Set<InternalRule> uniqueGroundRulePerGroundHead = getRulesWithUniqueHead();
 		choiceRecorder = new ChoiceRecorder(atomStore);
-		noGoodGenerator = new NoGoodGenerator(atomStore, choiceRecorder, factsFromProgram, this.program, uniqueGroundRulePerGroundHead);
-
+		noGoodGenerator = new NoGoodGenerator(atomStore, choiceRecorder, this.program, uniqueGroundRulePerGroundHead);
 		this.debugInternalChecks = debugInternalChecks;
 
 		// Initialize RuleInstantiator and instantiation strategy. Note that the instantiation strategy also
 		// needs the current assignment, which is set with every call of getGroundInstantiations.
 		this.instantiationStrategy = new DefaultLazyGroundingInstantiationStrategy(this.workingMemory, this.atomStore, this.factsFromProgram,
-				this.heuristicsConfiguration.isAccumulatorEnabled());
+				this.grounderHeuristicsConfiguration.isAccumulatorEnabled());
 		this.instantiationStrategy.setStaleWorkingMemoryEntries(this.removeAfterObtainingNewNoGoods);
 		this.ruleInstantiator = new LiteralInstantiator(this.instantiationStrategy);
 	}
@@ -156,6 +159,9 @@ public class NaiveGrounder extends BridgedGrounder implements ProgramAnalyzingGr
 		workingMemory.initialize(RuleAtom.PREDICATE);
 		workingMemory.initialize(ChoiceAtom.OFF);
 		workingMemory.initialize(ChoiceAtom.ON);
+		workingMemory.initialize(HeuristicInfluencerAtom.OFF);
+		workingMemory.initialize(HeuristicInfluencerAtom.ON);
+		workingMemory.initialize(HeuristicAtom.PREDICATE);
 
 		// Initialize rules and constraints in working memory.
 		for (InternalRule nonGroundRule : program.getRulesById().values()) {
@@ -184,40 +190,59 @@ public class NaiveGrounder extends BridgedGrounder implements ProgramAnalyzingGr
 		// Record all unique rule heads.
 		final Set<InternalRule> uniqueGroundRulePerGroundHead = new HashSet<>();
 
-		for (Map.Entry<Predicate, LinkedHashSet<InternalRule>> headDefiningRules : program.getPredicateDefiningRules().entrySet()) {
-			if (headDefiningRules.getValue().size() != 1) {
+		predicates: for (Map.Entry<Predicate, LinkedHashSet<InternalRule>> headDefiningRules : program.getPredicateDefiningRules().entrySet()) {
+			final LinkedHashSet<InternalRule> rules = headDefiningRules.getValue();
+			if (rules.size() != 1 && !areAllRulesGroundWithUniqueHeads(rules)) {
 				continue;
 			}
 
-			InternalRule nonGroundRule = headDefiningRules.getValue().iterator().next();
-			// Check that all variables of the body also occur in the head (otherwise grounding is not unique).
-			Atom headAtom = nonGroundRule.getHeadAtom();
+			rules: for (InternalRule nonGroundRule : rules) {
+				// Check that all variables of the body also occur in the head (otherwise grounding is not unique).
+				Atom headAtom = nonGroundRule.getHeadAtom();
 
-			// Rule is not guaranteed unique if there are facts for it.
-			HashSet<Instance> potentialFacts = factsFromProgram.get(headAtom.getPredicate());
-			if (potentialFacts != null && !potentialFacts.isEmpty()) {
-				continue;
-			}
+				// Rule is not guaranteed unique if there are facts for it.
+				Set<Instance> potentialFacts = factsFromProgram.get(headAtom.getPredicate());
+				if (!potentialFacts.isEmpty()) {
+					continue;
+				}
 
-			// Collect head and body variables.
-			HashSet<VariableTerm> occurringVariablesHead = new HashSet<>(headAtom.toLiteral().getBindingVariables());
-			HashSet<VariableTerm> occurringVariablesBody = new HashSet<>();
-			for (Literal lit : nonGroundRule.getPositiveBody()) {
-				occurringVariablesBody.addAll(lit.getBindingVariables());
-			}
-			occurringVariablesBody.removeAll(occurringVariablesHead);
+				// Collect head and body variables.
+				HashSet<VariableTerm> occurringVariablesHead = new HashSet<>(headAtom.toLiteral().getBindingVariables());
+				HashSet<VariableTerm> occurringVariablesBody = new HashSet<>();
+				for (Literal lit : nonGroundRule.getPositiveBody()) {
+					occurringVariablesBody.addAll(lit.getBindingVariables());
+				}
+				occurringVariablesBody.removeAll(occurringVariablesHead);
 
-			// Check if ever body variables occurs in the head.
-			if (occurringVariablesBody.isEmpty()) {
-				uniqueGroundRulePerGroundHead.add(nonGroundRule);
+				// Check if ever body variables occurs in the head.
+				if (occurringVariablesBody.isEmpty()) {
+					uniqueGroundRulePerGroundHead.add(nonGroundRule);
+				}
 			}
 		}
 		return uniqueGroundRulePerGroundHead;
 	}
 
+	private boolean
+	areAllRulesGroundWithUniqueHeads(Collection<InternalRule> rules) {
+		// FIXME: will be superseded by #283 (cf. #226)
+		Set<Atom> headAtoms = new HashSet<>();
+		for (InternalRule internalRule : rules) {
+			if (!internalRule.isGround()) {
+				return false;
+			}
+			final Atom headAtom = internalRule.getHeadAtom();
+			if (headAtoms.contains(headAtom)) {
+				return false;
+			}
+			headAtoms.add(headAtom);
+		}
+		return true;
+	}
+
 	/**
 	 * Registers a starting literal of a NonGroundRule at its corresponding working memory.
-	 * 
+	 *
 	 * @param nonGroundRule the rule in which the literal occurs.
 	 */
 	private void registerLiteralAtWorkingMemory(Literal literal, InternalRule nonGroundRule) {
@@ -256,7 +281,7 @@ public class NaiveGrounder extends BridgedGrounder implements ProgramAnalyzingGr
 		}
 
 		// Add true atoms from facts.
-		for (Map.Entry<Predicate, LinkedHashSet<Instance>> facts : factsFromProgram.entrySet()) {
+		for (Map.Entry<Predicate, ? extends Set<Instance>> facts : factsFromProgram.entrySet()) {
 			Predicate factPredicate = facts.getKey();
 			// Skip atoms over internal predicates.
 			if (factPredicate.isInternal()) {
@@ -287,13 +312,13 @@ public class NaiveGrounder extends BridgedGrounder implements ProgramAnalyzingGr
 
 	/**
 	 * Prepares facts of the input program for joining and derives all NoGoods representing ground rules. May only be called once.
-	 * 
+	 *
 	 * @return
 	 */
 	protected HashMap<Integer, NoGood> bootstrap() {
 		final HashMap<Integer, NoGood> groundNogoods = new LinkedHashMap<>();
 
-		for (Predicate predicate : factsFromProgram.keySet()) {
+		for (Predicate predicate : factsFromProgram.getPredicates()) {
 			// Instead of generating NoGoods, add instance to working memories directly.
 			workingMemory.addInstances(predicate, true, factsFromProgram.get(predicate));
 		}
@@ -301,8 +326,19 @@ public class NaiveGrounder extends BridgedGrounder implements ProgramAnalyzingGr
 		for (InternalRule nonGroundRule : fixedRules) {
 			// Generate NoGoods for all rules that have a fixed grounding.
 			RuleGroundingOrder groundingOrder = nonGroundRule.getGroundingOrders().getFixedGroundingOrder();
-			BindingResult bindingResult = getGroundInstantiations(nonGroundRule, groundingOrder, new Substitution(), null);
-			groundAndRegister(nonGroundRule, bindingResult.getGeneratedSubstitutions(), groundNogoods);
+
+			List<Substitution> substitutions;
+			if (groundingOrder != null) {
+				BindingResult bindingResult = getGroundInstantiations(nonGroundRule, groundingOrder, new Substitution(), null);
+				substitutions = bindingResult.getGeneratedSubstitutions();
+			} else {
+				// groundingOrder may be null only if body of rewritten heuristic rule is empty
+				if (!nonGroundRule.isHeuristicRule()) {
+					throw oops("Non-heuristic NonGroundRule without grounding order: " + nonGroundRule);
+				}
+				substitutions = singletonList(new Substitution());
+			}
+			groundAndRegister(nonGroundRule, substitutions, groundNogoods);
 		}
 
 		fixedRules = null;
@@ -398,7 +434,7 @@ public class NaiveGrounder extends BridgedGrounder implements ProgramAnalyzingGr
 	 */
 	private void groundAndRegister(final InternalRule nonGroundRule, final List<Substitution> substitutions, final Map<Integer, NoGood> newNoGoods) {
 		for (Substitution substitution : substitutions) {
-			List<NoGood> generatedNoGoods = noGoodGenerator.generateNoGoodsFromGroundSubstitution(nonGroundRule, substitution);
+			Collection<NoGood> generatedNoGoods = noGoodGenerator.generateNoGoodsFromGroundSubstitution(nonGroundRule, substitution);
 			registry.register(generatedNoGoods, newNoGoods);
 		}
 	}
@@ -411,7 +447,7 @@ public class NaiveGrounder extends BridgedGrounder implements ProgramAnalyzingGr
 	// Ideally, this method should be private. It's only visible because NaiveGrounderTest needs to access it.
 	BindingResult getGroundInstantiations(InternalRule rule, RuleGroundingOrder groundingOrder, Substitution partialSubstitution,
 			Assignment currentAssignment) {
-		int tolerance = heuristicsConfiguration.getTolerance(rule.isConstraint());
+		int tolerance = grounderHeuristicsConfiguration.getTolerance(rule.isConstraint());
 		if (tolerance < 0) {
 			tolerance = Integer.MAX_VALUE;
 		}
@@ -435,12 +471,12 @@ public class NaiveGrounder extends BridgedGrounder implements ProgramAnalyzingGr
 
 	/**
 	 * Helper method used by {@link NaiveGrounder#bindNextAtomInRule(RuleGroundingOrder, int, int, int, Substitution)}.
-	 * 
+	 *
 	 * Takes an <code>ImmutablePair</code> of a {@link Substitution} and an accompanying {@link AssignmentStatus} and calls
 	 * <code>bindNextAtomInRule</code> for the next literal in the grounding order.
 	 * If the assignment status for the last bound literal was {@link AssignmentStatus#UNASSIGNED}, the <code>remainingTolerance</code>
 	 * parameter is decreased by 1. If the remaining tolerance drops below zero, this method returns an empty {@link BindingResult}.
-	 * 
+	 *
 	 * @param groundingOrder
 	 * @param orderPosition
 	 * @param originalTolerance
@@ -491,11 +527,11 @@ public class NaiveGrounder extends BridgedGrounder implements ProgramAnalyzingGr
 	//@formatter:off
 	/**
 	 * Computes ground substitutions for a literal based on a {@link RuleGroundingOrder} and a {@link Substitution}.
-	 * 
+	 *
 	 * Computes ground substitutions for the literal at position <code>orderPosition</code> of <code>groundingOrder</code>
-	 * Actual substitutions are computed by this grounder's {@link LiteralInstantiator}. 
-	 * 
-	 * @param groundingOrder a {@link RuleGroundingOrder} representing the body literals of a rule in the 
+	 * Actual substitutions are computed by this grounder's {@link LiteralInstantiator}.
+	 *
+	 * @param groundingOrder a {@link RuleGroundingOrder} representing the body literals of a rule in the
 	 * 						 sequence in which the should be bound during grounding.
 	 * @param orderPosition the current position within <code>groundingOrder</code>, indicates which literal should be bound
 	 * @param originalTolerance the original tolerance of the used grounding heuristic
@@ -567,6 +603,15 @@ public class NaiveGrounder extends BridgedGrounder implements ProgramAnalyzingGr
 	}
 
 	@Override
+	public Pair<Map<Integer, Integer[]>, Map<Integer, Integer[]>> getHeuristicAtoms() {
+		return choiceRecorder.getAndResetHeuristics();
+	}
+
+	@Override
+	public Map<Integer, HeuristicDirectiveValues> getHeuristicValues() {
+		return choiceRecorder.getAndResetHeuristicValues();
+	}
+	@Override
 	public Map<Integer, Set<Integer>> getHeadsToBodies() {
 		return choiceRecorder.getAndResetHeadsToBodies();
 	}
@@ -584,17 +629,23 @@ public class NaiveGrounder extends BridgedGrounder implements ProgramAnalyzingGr
 	}
 
 	@Override
+	public AtomStore getAtomStore() {
+		return this.atomStore;
+	}
+
+	static String groundLiteralToString(Literal literal, Substitution substitution, boolean isFirst) {
+		Literal groundLiteral = literal.substitute(substitution);
+		return  (isFirst ? "" : ", ") + groundLiteral.toString();
+	}
+
+	@Override
 	public InternalRule getNonGroundRule(Integer ruleId) {
 		return knownNonGroundRules.get(ruleId);
 	}
 
 	@Override
 	public boolean isFact(Atom atom) {
-		LinkedHashSet<Instance> instances = factsFromProgram.get(atom.getPredicate());
-		if (instances == null) {
-			return false;
-		}
-		return instances.contains(new Instance(atom.getTerms()));
+		return program.getFactsByPredicate().isFact(atom);
 	}
 
 	@Override
@@ -606,8 +657,7 @@ public class NaiveGrounder extends BridgedGrounder implements ProgramAnalyzingGr
 			if (literal.isNegated()) {
 				continue;
 			}
-			LinkedHashSet<Instance> factsOverPredicate = factsFromProgram.get(literal.getPredicate());
-			if (factsOverPredicate != null && factsOverPredicate.contains(new Instance(literal.getAtom().getTerms()))) {
+			if (isFact(literal.getAtom())) {
 				iterator.remove();
 			}
 		}
@@ -617,7 +667,7 @@ public class NaiveGrounder extends BridgedGrounder implements ProgramAnalyzingGr
 	/**
 	 * Checks that every nogood not marked as {@link NoGoodInterface.Type#INTERNAL} contains only
 	 * atoms which are not {@link Predicate#isSolverInternal()} (except {@link RuleAtom}s, which are allowed).
-	 * 
+	 *
 	 * @param newNoGoods
 	 */
 	private void checkTypesOfNoGoods(Collection<NoGood> newNoGoods) {

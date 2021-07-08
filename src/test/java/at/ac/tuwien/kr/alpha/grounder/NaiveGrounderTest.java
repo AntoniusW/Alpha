@@ -31,18 +31,22 @@ import at.ac.tuwien.kr.alpha.common.AtomStore;
 import at.ac.tuwien.kr.alpha.common.AtomStoreImpl;
 import at.ac.tuwien.kr.alpha.common.Literals;
 import at.ac.tuwien.kr.alpha.common.NoGood;
+import at.ac.tuwien.kr.alpha.common.NoGoodCreator;
 import at.ac.tuwien.kr.alpha.common.atoms.Literal;
 import at.ac.tuwien.kr.alpha.common.program.InputProgram;
 import at.ac.tuwien.kr.alpha.common.program.InternalProgram;
 import at.ac.tuwien.kr.alpha.common.program.NormalProgram;
 import at.ac.tuwien.kr.alpha.common.rule.InternalRule;
 import at.ac.tuwien.kr.alpha.common.terms.ConstantTerm;
+import at.ac.tuwien.kr.alpha.common.terms.VariableTerm;
 import at.ac.tuwien.kr.alpha.grounder.heuristics.GrounderHeuristicsConfiguration;
 import at.ac.tuwien.kr.alpha.grounder.instantiation.BindingResult;
 import at.ac.tuwien.kr.alpha.grounder.parser.ProgramParser;
 import at.ac.tuwien.kr.alpha.grounder.parser.ProgramPartParser;
 import at.ac.tuwien.kr.alpha.solver.ThriceTruth;
 import at.ac.tuwien.kr.alpha.solver.TrailAssignment;
+import at.ac.tuwien.kr.alpha.solver.heuristics.HeuristicsConfiguration;
+import at.ac.tuwien.kr.alpha.solver.heuristics.HeuristicsConfigurationBuilder;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -61,7 +65,7 @@ import static org.junit.Assert.fail;
 
 /**
  * Tests {@link NaiveGrounder}
- * 
+ *
  * Some test cases use atoms of the something/1 predicate to trick the grounder
  * into believing that other atoms might become true. This is fragile because future implementations
  * of preprocessing techniques might render this trick useless.
@@ -70,6 +74,9 @@ import static org.junit.Assert.fail;
 public class NaiveGrounderTest {
 	private static final ProgramParser PROGRAM_PARSER = new ProgramParser();
 	private static final ProgramPartParser PROGRAM_PART_PARSER = new ProgramPartParser();
+	private static final VariableTerm N = VariableTerm.getInstance("N");
+	private static final ConstantTerm<Integer> ONE = ConstantTerm.getInstance(1);
+	private final HeuristicsConfiguration heuristicsConfiguration = new HeuristicsConfigurationBuilder().setRespectDomspecHeuristics(true).build();
 
 	final Literal litP1X = PROGRAM_PART_PARSER.parseLiteral("p1(X)");
 	final Literal litP2X = PROGRAM_PART_PARSER.parseLiteral("p2(X)");
@@ -77,6 +84,11 @@ public class NaiveGrounderTest {
 	final Literal litQ1Y = PROGRAM_PART_PARSER.parseLiteral("q1(Y)");
 	final Literal litAX = PROGRAM_PART_PARSER.parseLiteral("a(X)");
 	final Literal litA1 = PROGRAM_PART_PARSER.parseLiteral("a(1)");
+
+	@Before
+	public void resetIdGenerator() {
+		ChoiceRecorder.ID_GENERATOR.resetGenerator();
+	}
 
 	@Before
 	public void resetRuleIdGenerator() {
@@ -95,9 +107,9 @@ public class NaiveGrounderTest {
 				+ "c :- b.");
 		NormalProgram normal = system.normalizeProgram(program);
 		InternalProgram prog = system.performProgramPreprocessing(InternalProgram.fromNormalProgram(normal));
-		
+
 		AtomStore atomStore = new AtomStoreImpl();
-		Grounder grounder = GrounderFactory.getInstance("naive", prog, atomStore, true);
+		Grounder grounder = GrounderFactory.getInstance("naive", prog, atomStore, heuristicsConfiguration, true);
 		Map<Integer, NoGood> noGoods = grounder.getNoGoods(new TrailAssignment(atomStore));
 		int litCNeg = Literals.atomToLiteral(atomStore.get(PROGRAM_PART_PARSER.parseBasicAtom("c")), false);
 		int litB = Literals.atomToLiteral(atomStore.get(PROGRAM_PART_PARSER.parseBasicAtom("b")));
@@ -118,9 +130,9 @@ public class NaiveGrounderTest {
 				+ "d :- b, c. ");
 		NormalProgram normal = system.normalizeProgram(program);
 		InternalProgram prog = system.performProgramPreprocessing(InternalProgram.fromNormalProgram(normal));
-		
+
 		AtomStore atomStore = new AtomStoreImpl();
-		Grounder grounder = GrounderFactory.getInstance("naive", prog, atomStore, true);
+		Grounder grounder = GrounderFactory.getInstance("naive", prog, atomStore, heuristicsConfiguration, true);
 		Map<Integer, NoGood> noGoods = grounder.getNoGoods(new TrailAssignment(atomStore));
 		int litANeg = Literals.atomToLiteral(atomStore.get(PROGRAM_PART_PARSER.parseBasicAtom("a")), false);
 		int litBNeg = Literals.atomToLiteral(atomStore.get(PROGRAM_PART_PARSER.parseBasicAtom("b")), false);
@@ -144,12 +156,12 @@ public class NaiveGrounderTest {
 				+ ":- b.");
 		NormalProgram normal = system.normalizeProgram(program);
 		InternalProgram prog = system.performProgramPreprocessing(InternalProgram.fromNormalProgram(normal));
-		
+
 		AtomStore atomStore = new AtomStoreImpl();
-		Grounder grounder = GrounderFactory.getInstance("naive", prog, atomStore, true);
+		Grounder grounder = GrounderFactory.getInstance("naive", prog, atomStore, heuristicsConfiguration, true);
 		Map<Integer, NoGood> noGoods = grounder.getNoGoods(new TrailAssignment(atomStore));
 		int litB = Literals.atomToLiteral(atomStore.get(PROGRAM_PART_PARSER.parseBasicAtom("b")));
-		assertTrue(noGoods.containsValue(NoGood.fromConstraint(Collections.singletonList(litB), Collections.emptyList())));
+		assertTrue(noGoods.containsValue(NoGoodCreator.fromConstraint(Collections.singletonList(litB), Collections.emptyList())));
 	}
 
 	@Test
@@ -213,7 +225,7 @@ public class NaiveGrounderTest {
 				);
 
 		AtomStore atomStore = new AtomStoreImpl();
-		NaiveGrounder grounder = (NaiveGrounder) GrounderFactory.getInstance("naive", program, atomStore, p -> true, GrounderHeuristicsConfiguration.permissive(), true);
+		NaiveGrounder grounder = (NaiveGrounder) GrounderFactory.getInstance("naive", program, atomStore, heuristicsConfiguration, p -> true, GrounderHeuristicsConfiguration.permissive(), true);
 
 		InternalRule nonGroundRule = grounder.getNonGroundRule(0);
 		String strLiteral = "p1".equals(predicateNameOfStartingLiteral) ? "p1(X)" : "p1(Y)";
@@ -275,7 +287,7 @@ public class NaiveGrounderTest {
 		InternalProgram internalPrg = InternalProgram.fromNormalProgram(system.normalizeProgram(program));
 		AtomStore atomStore = new AtomStoreImpl();
 		TrailAssignment currentAssignment = new TrailAssignment(atomStore);
-		NaiveGrounder grounder = (NaiveGrounder) GrounderFactory.getInstance("naive", internalPrg, atomStore, p -> true, GrounderHeuristicsConfiguration.permissive(), true);
+		NaiveGrounder grounder = (NaiveGrounder) GrounderFactory.getInstance("naive", internalPrg, atomStore, heuristicsConfiguration, p -> true, GrounderHeuristicsConfiguration.permissive(), true);
 
 		int b = atomStore.putIfAbsent(atom("b", 1));
 		currentAssignment.growForMaxAtomId();
@@ -287,7 +299,7 @@ public class NaiveGrounderTest {
 		final BindingResult bindingResult = grounder.getGroundInstantiations(nonGroundRule, nonGroundRule.getGroundingOrders().groundingOrders.get(startingLiteral), substStartingLiteral, currentAssignment);
 		assertEquals(expectNoGoods, bindingResult.size() > 0);
 	}
-	
+
 	@Test
 	public void testPermissiveGrounderHeuristicTolerance_0_reject() {
 		InputProgram program = PROGRAM_PARSER.parse("a(1). "
@@ -295,7 +307,7 @@ public class NaiveGrounderTest {
 				+ "b(X) :- something(X).");
 		testPermissiveGrounderHeuristicTolerance(program, 0, litAX, 1, 0, false, Arrays.asList(1));
 	}
-	
+
 	@Test
 	public void testPermissiveGrounderHeuristicTolerance_1_accept() {
 		InputProgram program = PROGRAM_PARSER.parse("a(1). "
@@ -303,7 +315,7 @@ public class NaiveGrounderTest {
 				+ "b(X) :- something(X).");
 		testPermissiveGrounderHeuristicTolerance(program, 0, litAX, 1, 1, true, Arrays.asList(1));
 	}
-	
+
 	@Test
 	public void testPermissiveGrounderHeuristicTolerance_1_reject() {
 		InputProgram program = PROGRAM_PARSER.parse("a(1). "
@@ -380,8 +392,8 @@ public class NaiveGrounderTest {
 		InternalProgram internalPrg = InternalProgram.fromNormalProgram(system.normalizeProgram(program));
 		AtomStore atomStore = new AtomStoreImpl();
 		TrailAssignment currentAssignment = new TrailAssignment(atomStore);
-		GrounderHeuristicsConfiguration heuristicConfiguration = GrounderHeuristicsConfiguration.getInstance(tolerance, tolerance);
-		NaiveGrounder grounder = (NaiveGrounder) GrounderFactory.getInstance("naive", internalPrg, atomStore, p -> true, heuristicConfiguration, true);
+		GrounderHeuristicsConfiguration grounderHeuristicsConfiguration = GrounderHeuristicsConfiguration.getInstance(tolerance, tolerance);
+		NaiveGrounder grounder = (NaiveGrounder) GrounderFactory.getInstance("naive", internalPrg, atomStore, heuristicsConfiguration, p -> true, grounderHeuristicsConfiguration, true);
 
 		int[] bAtomIDs = new int[truthsOfB.length];
 		for (int i = 0; i < truthsOfB.length; i++) {

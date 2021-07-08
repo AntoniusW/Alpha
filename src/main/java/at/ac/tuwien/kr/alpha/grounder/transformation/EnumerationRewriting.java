@@ -1,5 +1,6 @@
 package at.ac.tuwien.kr.alpha.grounder.transformation;
 
+import at.ac.tuwien.kr.alpha.common.EnumerationDirective;
 import at.ac.tuwien.kr.alpha.common.Predicate;
 import at.ac.tuwien.kr.alpha.common.atoms.Atom;
 import at.ac.tuwien.kr.alpha.common.atoms.BasicLiteral;
@@ -28,12 +29,12 @@ public class EnumerationRewriting extends ProgramTransformation<InputProgram, In
 	@Override
 	public InputProgram apply(InputProgram inputProgram) {
 		// Read enumeration predicate from directive.
-		String enumDirective = inputProgram.getInlineDirectives().getDirectiveValue(InlineDirectives.DIRECTIVE.enum_predicate_is);
+		EnumerationDirective enumDirective = (EnumerationDirective)inputProgram.getInlineDirectives().getDirectiveValue(InlineDirectives.DIRECTIVE.enum_predicate_is);
 		if (enumDirective == null) {
 			// Directive not set, nothing to rewrite.
 			return inputProgram;
 		}
-		Predicate enumPredicate = Predicate.getInstance(enumDirective, 3);
+		Predicate enumPredicate = Predicate.getInstance(enumDirective.getValue(), 3);
 
 		InputProgram.Builder programBuilder = InputProgram.builder().addInlineDirectives(inputProgram.getInlineDirectives());
 

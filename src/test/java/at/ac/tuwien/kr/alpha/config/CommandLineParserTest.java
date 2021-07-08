@@ -35,6 +35,7 @@ import java.util.Arrays;
 import java.util.function.Consumer;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class CommandLineParserTest {
@@ -51,23 +52,23 @@ public class CommandLineParserTest {
 	@Test
 	public void help() throws ParseException {
 		StringBuilder bld = new StringBuilder();
-		CommandLineParser parser = new CommandLineParser(DEFAULT_COMMAND_LINE, (msg) -> bld.append(msg));
+		CommandLineParser parser = new CommandLineParser(DEFAULT_COMMAND_LINE, bld::append);
 		parser.parseCommandLine(new String[] {"-h"});
-		assertTrue(!(bld.toString().isEmpty()));
+		assertFalse(bld.toString().isEmpty());
 	}
 
 	@Test
 	public void basicUsageWithFile() throws ParseException {
 		CommandLineParser parser = new CommandLineParser(DEFAULT_COMMAND_LINE, DEFAULT_ABORT_ACTION);
 		AlphaConfig ctx = parser.parseCommandLine(new String[] {"-i", "someFile.asp", "-i", "someOtherFile.asp"});
-		assertEquals(Arrays.asList(new String[] {"someFile.asp", "someOtherFile.asp"}), ctx.getInputConfig().getFiles());
+		assertEquals(Arrays.asList("someFile.asp", "someOtherFile.asp"), ctx.getInputConfig().getFiles());
 	}
 
 	@Test
 	public void basicUsageWithString() throws ParseException {
 		CommandLineParser parser = new CommandLineParser(DEFAULT_COMMAND_LINE, DEFAULT_ABORT_ACTION);
 		AlphaConfig ctx = parser.parseCommandLine(new String[] {"-str", "b :- a.", "-str", "c :- a, b."});
-		assertEquals(Arrays.asList(new String[] {"b :- a.", "c :- a, b."}), ctx.getInputConfig().getAspStrings());
+		assertEquals(Arrays.asList("b :- a.", "c :- a, b."), ctx.getInputConfig().getAspStrings());
 	}
 
 	@Test(expected = ParseException.class)
@@ -168,6 +169,13 @@ public class CommandLineParserTest {
 		CommandLineParser parser = new CommandLineParser(DEFAULT_COMMAND_LINE, DEFAULT_ABORT_ACTION);
 		AlphaConfig cfg = parser.parseCommandLine(new String[]{"-str", "aString.", "-sep", "some-string"});
 		assertEquals("some-string", cfg.getSystemConfig().getAtomSeparator());
+	}
+
+	@Test
+	public void ignoreDomspecHeuristics() throws ParseException {
+		CommandLineParser parser = new CommandLineParser(DEFAULT_COMMAND_LINE, DEFAULT_ABORT_ACTION);
+		AlphaConfig alphaConfig = parser.parseCommandLine(new String[]{"-str", "aString.", "-ids"});
+		assertTrue(alphaConfig.getSystemConfig().isIgnoreDomspecHeuristics());
 	}
 
 }

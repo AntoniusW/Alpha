@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017-2018, the Alpha Team.
+ * Copyright (c) 2017-2019, the Alpha Team.
  * All rights reserved.
  *
  * Additional changes made by Siemens.
@@ -28,12 +28,14 @@
 package at.ac.tuwien.kr.alpha.solver.heuristics;
 
 import at.ac.tuwien.kr.alpha.common.Assignment;
+import at.ac.tuwien.kr.alpha.common.Literals;
 import at.ac.tuwien.kr.alpha.common.NoGood;
 import at.ac.tuwien.kr.alpha.solver.ChoiceManager;
 
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.Random;
+import java.util.Set;
 
 import static at.ac.tuwien.kr.alpha.common.Literals.atomOf;
 
@@ -57,8 +59,12 @@ public class BerkMinLiteral extends BerkMin {
 	}
 
 	@Override
-	public int chooseAtom() {
-		return  getMostActiveChoosableAtom(activeLiterals.stream());
+	public int chooseAtom(Set<Integer> admissibleChoices) {
+		if (admissibleChoices == null) {
+			return getMostActiveChoosableAtom(activeLiterals.stream().map(Literals::atomOf));
+		} else {
+			return getMostActiveChoosableAtom(activeLiterals.stream().map(Literals::atomOf).filter(admissibleChoices::contains));
+		}
 	}
 
 	private void pushToStack(Integer literal) {

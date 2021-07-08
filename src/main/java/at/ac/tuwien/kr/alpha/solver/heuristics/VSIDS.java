@@ -40,6 +40,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Set;
 
 import static at.ac.tuwien.kr.alpha.Util.arrayGrowthSize;
 import static at.ac.tuwien.kr.alpha.common.Literals.*;
@@ -144,8 +145,8 @@ public class VSIDS implements ActivityBasedBranchingHeuristic {
 	 * When choosing between dependent atoms, a {@link BodyActivityProvider} is employed to define the activity of a choice point.
 	 */
 	@Override
-	public int chooseLiteral() {
-		int atom = chooseAtom();
+	public int chooseLiteral(Set<Integer> admissibleChoices) {
+		int atom = chooseAtom(admissibleChoices);
 		if (atom == DEFAULT_CHOICE_ATOM) {
 			return DEFAULT_CHOICE_LITERAL;
 		}
@@ -153,7 +154,12 @@ public class VSIDS implements ActivityBasedBranchingHeuristic {
 		return atomToLiteral(atom, sign);
 	}
 
-	protected int chooseAtom() {
+	@Override
+	public int chooseAtom(Set<Integer> admissibleChoices) {
+		if (admissibleChoices != null) {
+			throw new UnsupportedOperationException("Choosing from a set of admissible choices is not yet implemented by VSIDS.");
+			// TODO: idea: build new PriorityQueue, taking comparator from existing HeapOfActiveAtoms, then pick top element (is this the most performant way)? (cf. issue #181)
+		}
 		ingestBufferedNoGoods();
 		Integer mostActiveAtom;
 		while ((mostActiveAtom = heapOfActiveAtoms.getMostActiveAtom()) != null) {

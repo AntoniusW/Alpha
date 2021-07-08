@@ -85,6 +85,7 @@ public class DependencyDrivenHeuristic implements ActivityBasedBranchingHeuristi
 
 	/**
 	 * Maps rule heads to atoms representing corresponding bodies.
+	 * TODO: somehow use at.ac.tuwien.kr.alpha.solver.ChoiceManager.headsToBodies instead (cf. issue #181)
 	 */
 	protected final MultiValuedMap<Integer, Integer> headToBodies = new HashSetValuedHashMap<>();
 
@@ -98,6 +99,15 @@ public class DependencyDrivenHeuristic implements ActivityBasedBranchingHeuristi
 	 */
 	protected final MultiValuedMap<Integer, Integer> atomsToBodiesAtoms = new HashSetValuedHashMap<>();
 
+	/**
+	 *
+	 * @param assignment
+	 * @param choiceManager
+	 * @param decayPeriod the number of steps after which all counters are decayed (i.e. multiplied by {@code decayFactor}).
+	 * @param decayFactor
+	 * @param random
+	 * @param bodyActivityType
+	 */
 	public DependencyDrivenHeuristic(Assignment assignment, ChoiceManager choiceManager, int decayPeriod, double decayFactor, Random random, BodyActivityType bodyActivityType) {
 		this.assignment = assignment;
 		this.choiceManager = choiceManager;
@@ -113,34 +123,6 @@ public class DependencyDrivenHeuristic implements ActivityBasedBranchingHeuristi
 
 	public DependencyDrivenHeuristic(Assignment assignment, ChoiceManager choiceManager, Random random) {
 		this(assignment, choiceManager, random, BodyActivityType.DEFAULT);
-	}
-
-	/**
-	 * Gets the number of steps after which all counters are decayed (i.e. multiplied by {@link #getDecayFactor()}.
-	 */
-	public int getDecayPeriod() {
-		return decayPeriod;
-	}
-
-	/**
-	 * Sets the number of steps after which all counters are decayed (i.e. multiplied by {@link #getDecayFactor()}.
-	 */
-	public void setDecayPeriod(int decayPeriod) {
-		this.decayPeriod = decayPeriod;
-	}
-
-	/**
-	 * Gets the factor by which all counters are multiplied to decay after {@link #getDecayPeriod()}.
-	 */
-	public double getDecayFactor() {
-		return decayFactor;
-	}
-
-	/**
-	 * Sets the factor by which all counters are multiplied to decay after {@link #getDecayPeriod()}.
-	 */
-	public void setDecayFactor(double decayFactor) {
-		this.decayFactor = decayFactor;
 	}
 
 	@Override
@@ -192,7 +174,12 @@ public class DependencyDrivenHeuristic implements ActivityBasedBranchingHeuristi
 	 */
 	@Override
 	public int chooseLiteral() {
-		int atom = chooseAtom();
+		return chooseLiteral(null);
+	}
+	
+	@Override
+	public int chooseLiteral(Set<Integer> admissibleChoices) {
+		int atom = chooseAtom(admissibleChoices);
 		if (atom == DEFAULT_CHOICE_ATOM) {
 			return DEFAULT_CHOICE_LITERAL;
 		}
@@ -200,21 +187,30 @@ public class DependencyDrivenHeuristic implements ActivityBasedBranchingHeuristi
 		return atomToLiteral(atom, sign);
 	}
 	
-	protected int chooseAtom() {
+	@Override
+	public int chooseAtom(Set<Integer> admissibleChoices) {
 		for (NoGood noGood : stackOfNoGoods) {
 			int mostActiveAtom = getMostActiveAtom(noGood);
-			if (choiceManager.isActiveChoiceAtom(mostActiveAtom)) {
+			if (choiceManager.isActiveChoiceAtom(mostActiveAtom) && (admissibleChoices == null || admissibleChoices.contains(mostActiveAtom))) {
 				return mostActiveAtom;
 			}
 
 			Collection<Integer> bodies = atomsToBodiesAtoms.get(mostActiveAtom);
-			Optional<Integer> mostActiveBody = bodies.stream().filter(this::isUnassigned).filter(choiceManager::isActiveChoiceAtom)
-					.max(Comparator.comparingDouble(bodyActivity::get));
+			Optional<Integer> mostActiveBody = getMostActiveBody(bodies.stream(), admissibleChoices);
 			if (mostActiveBody.isPresent()) {
 				return mostActiveBody.get();
 			}
 		}
 		return DEFAULT_CHOICE_ATOM;
+	}
+
+	protected Optional<Integer> getMostActiveBody(Stream<Integer> streamOfBodies, Set<Integer> admissibleChoices) {
+		if (admissibleChoices != null) {
+			streamOfBodies = streamOfBodies.filter(admissibleChoices::contains);
+		}
+		Optional<Integer> mostActiveBody = streamOfBodies.filter(this::isUnassigned).filter(choiceManager::isActiveChoiceAtom)
+				.max(Comparator.comparingDouble(bodyActivity::get));
+		return mostActiveBody;
 	}
 
 	protected boolean chooseSign(int atom) {
@@ -300,19 +296,6 @@ public class DependencyDrivenHeuristic implements ActivityBasedBranchingHeuristi
 			activityCounters.replaceAll((k, v) -> v * decayFactor);
 			stepsSinceLastDecay = 0;
 		}
-	}
-
-	/**
-	 * Gets the most recent conflict that is still violated.
-	 * @return the violated nogood closest to the top of the stack of nogoods.
-	 */
-	NoGood getCurrentTopClause() {
-		for (NoGood noGood : stackOfNoGoods) {
-			if (assignment.isUndefined(noGood)) {
-				return noGood;
-			}
-		}
-		return null;
 	}
 
 	protected boolean isUnassigned(int atom) {

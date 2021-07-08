@@ -32,6 +32,7 @@ import at.ac.tuwien.kr.alpha.solver.ChoiceManager;
 import at.ac.tuwien.kr.alpha.solver.learning.GroundConflictNoGoodLearner.ConflictAnalysisResult;
 
 import java.util.Collection;
+import java.util.Set;
 
 import static at.ac.tuwien.kr.alpha.common.Literals.atomToLiteral;
 
@@ -64,10 +65,34 @@ public class NaiveHeuristic implements BranchingHeuristic {
 	}
 
 	@Override
-	public int chooseLiteral() {
+	public int chooseAtom() {
 		return atomToLiteral(choiceManager.getNextActiveChoiceAtom());
 	}
-	
+
+	@Override
+	public int chooseAtom(Set<Integer> admissibleChoices) {
+		if (admissibleChoices == null) {
+			return chooseLiteral();
+		}
+
+		for (int choice : admissibleChoices) {
+			if (choiceManager.isActiveChoiceAtom(choice)) {
+				return choice;
+			}
+		}
+		return DEFAULT_CHOICE_ATOM;
+	}
+
+	@Override
+	public int chooseLiteral() {
+		return chooseAtom();
+	}
+
+	@Override
+	public int chooseLiteral(Set<Integer> admissibleChoices) {
+		return chooseAtom(admissibleChoices);
+	}
+
 	@Override
 	public String toString() {
 		return this.getClass().getSimpleName();

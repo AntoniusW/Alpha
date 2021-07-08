@@ -1,20 +1,31 @@
+/*
+ * Copyright (c) 2018-2020, the Alpha Team.
+ * All rights reserved.
+ *
+ * Additional changes made by Siemens.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1) Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ *
+ * 2) Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package at.ac.tuwien.kr.alpha.grounder.structure;
-
-import static at.ac.tuwien.kr.alpha.Util.oops;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Set;
 
 import at.ac.tuwien.kr.alpha.common.Assignment;
 import at.ac.tuwien.kr.alpha.common.AtomStore;
@@ -31,22 +42,35 @@ import at.ac.tuwien.kr.alpha.grounder.Instance;
 import at.ac.tuwien.kr.alpha.grounder.Unification;
 import at.ac.tuwien.kr.alpha.grounder.Unifier;
 import at.ac.tuwien.kr.alpha.solver.ThriceTruth;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
+
+import static at.ac.tuwien.kr.alpha.Util.oops;
 
 /**
  * Copyright (c) 2018-2020, the Alpha Team.
  */
 public class AnalyzeUnjustified {
 	private static final Logger LOGGER = LoggerFactory.getLogger(AnalyzeUnjustified.class);
-	private final InternalProgram programAnalysis;
+	private final InternalProgram program;
 	private final AtomStore atomStore;
-	private final Map<Predicate, LinkedHashSet<Instance>> factsFromProgram;
 	private int renamingCounter;
 	private int padDepth;
 
-	public AnalyzeUnjustified(InternalProgram programAnalysis, AtomStore atomStore, Map<Predicate, LinkedHashSet<Instance>> factsFromProgram) {
-		this.programAnalysis = programAnalysis;
+	public AnalyzeUnjustified(InternalProgram program, AtomStore atomStore) {
+		this.program = program;
 		this.atomStore = atomStore;
-		this.factsFromProgram = factsFromProgram;
 		padDepth = 0;
 	}
 
@@ -295,7 +319,7 @@ public class AnalyzeUnjustified {
 		// Find more substitutions, consider currentAssignment.
 		List<Atom> assignedAtoms = this.assignedAtoms.get(predicate);
 		// Consider instances from facts.
-		LinkedHashSet<Instance> factsOverPredicate = factsFromProgram.get(predicate);
+		Set<Instance> factsOverPredicate = program.getFactsByPredicate().get(predicate);
 		return new AssignedAtomsIterator(predicate, assignedAtoms, factsOverPredicate);
 	}
 
@@ -304,10 +328,10 @@ public class AnalyzeUnjustified {
 		private final Iterator<Atom> assignedAtomsIterator;
 		private final Iterator<Instance> factsIterator;
 
-		public AssignedAtomsIterator(Predicate predicate, List<Atom> assignedAtoms, Set<Instance> facts) {
+		AssignedAtomsIterator(Predicate predicate, List<Atom> assignedAtoms, Set<Instance> facts) {
 			this.predicate = predicate;
 			this.assignedAtomsIterator = assignedAtoms == null ? Collections.emptyIterator() : assignedAtoms.iterator();
-			this.factsIterator = facts == null ? Collections.emptyIterator() : facts.iterator();
+			this.factsIterator = facts.iterator();
 		}
 
 		@Override
@@ -331,17 +355,15 @@ public class AnalyzeUnjustified {
 
 		List<RuleAndUnifier> rulesWithUnifier = new ArrayList<>();
 		Predicate predicate = p.getPredicate();
-		
+
 		ArrayList<FactOrNonGroundRule> definingRulesAndFacts = new ArrayList<>();
 		// Get facts over the same predicate.
-		LinkedHashSet<Instance> factInstances = factsFromProgram.get(predicate);
-		if (factInstances != null) {
-			for (Instance factInstance : factInstances) {
-				definingRulesAndFacts.add(new FactOrNonGroundRule(factInstance));
-			}
+		Set<Instance> factInstances = program.getFactsByPredicate().get(predicate);
+		for (Instance factInstance : factInstances) {
+			definingRulesAndFacts.add(new FactOrNonGroundRule(factInstance));
 		}
 
-		HashSet<InternalRule> rulesDefiningPredicate = programAnalysis.getPredicateDefiningRules().get(predicate);
+		HashSet<InternalRule> rulesDefiningPredicate = program.getPredicateDefiningRules().get(predicate);
 		if (rulesDefiningPredicate != null) {
 			for (InternalRule nonGroundRule : rulesDefiningPredicate) {
 				definingRulesAndFacts.add(new FactOrNonGroundRule(nonGroundRule));
@@ -358,6 +380,7 @@ public class AnalyzeUnjustified {
 				headAtom = rule.getHeadAtom();
 			} else {
 				// Create atom and empty rule body out of instance.
+				assert factOrNonGroundRule.factInstance != null;
 				headAtom = new BasicAtom(p.getPredicate(), factOrNonGroundRule.factInstance.terms);
 				renamedBody = Collections.emptySet();
 			}

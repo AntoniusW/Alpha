@@ -32,6 +32,7 @@ import at.ac.tuwien.kr.alpha.solver.learning.GroundConflictNoGoodLearner.Conflic
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 /**
  * A heuristic that replays a fixed list of choices.
@@ -65,7 +66,12 @@ public class ReplayHeuristic implements BranchingHeuristic {
 	}
 
 	@Override
-	public int chooseLiteral() {
+	public int chooseAtom(Set<Integer> admissibleChoices) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public int chooseLiteral(Set<Integer> admissibleChoices) {
 		if (!choicesIterator.hasNext()) {
 			return DEFAULT_CHOICE_LITERAL;
 		}
@@ -76,12 +82,15 @@ public class ReplayHeuristic implements BranchingHeuristic {
 		}
 		int replayChoiceAtom = Math.abs(replayChoiceSignedAtom);
 		int replayChoiceLiteral = Literals.atomToLiteral(replayChoiceAtom, replayChoiceSignedAtom > 0);
+		if (admissibleChoices != null && !admissibleChoices.contains(replayChoiceSignedAtom)) {
+			throw new IllegalStateException("Replay choice is not admissible: " + replayChoiceSignedAtom);
+		}
 		if (!choiceManager.isActiveChoiceAtom(replayChoiceAtom)) {
 			throw new IllegalStateException("Replay choice is not an active choice point: " + replayChoiceAtom);
 		}
 		return replayChoiceLiteral;
 	}
-	
+
 	@Override
 	public String toString() {
 		return this.getClass().getSimpleName();

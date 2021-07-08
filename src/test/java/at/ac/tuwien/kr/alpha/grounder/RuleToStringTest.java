@@ -89,8 +89,12 @@ public class RuleToStringTest {
 	}
 
 	private void constructNonGroundRuleAndCheckToString(String textualRule) {
+		constructNonGroundRuleAndCheckToString(textualRule, textualRule);
+	}
+
+	private void constructNonGroundRuleAndCheckToString(String textualRule, String expectedToString) {
 		InternalRule nonGroundRule = InternalRule.fromNormalRule(NormalRule.fromBasicRule(parseSingleRule(textualRule)));
-		assertEquals(textualRule, nonGroundRule.toString());
+		assertEquals(expectedToString, nonGroundRule.toString());
 	}
 
 	private BasicRule parseSingleRule(String rule) {

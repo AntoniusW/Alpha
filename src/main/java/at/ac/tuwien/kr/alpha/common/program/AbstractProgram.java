@@ -9,6 +9,8 @@ import at.ac.tuwien.kr.alpha.grounder.parser.InlineDirectives;
 import java.util.Collections;
 import java.util.List;
 
+import static at.ac.tuwien.kr.alpha.Util.join;
+
 /**
  * The parent type for all kinds of programs. Defines a program's basic structure (facts + rules + inlineDirectives)
  * 
@@ -42,11 +44,19 @@ public abstract class AbstractProgram<R extends AbstractRule<? extends Head>> {
 	@Override
 	public String toString() {
 		final String ls = System.lineSeparator();
-		final String result = facts.isEmpty() ? "" : Util.join("", facts, "." + ls, "." + ls);
+		String result = facts.isEmpty() ? "" : Util.join("", facts, "." + ls, "." + ls);
+
 		if (rules.isEmpty()) {
 			return result;
 		}
-		return Util.join(result, rules, ls, ls);
+
+		result = join(result, rules, ls, ls);
+
+		if (inlineDirectives == null || inlineDirectives.isEmpty()) {
+			return result;
+		}
+
+		return join(result, inlineDirectives.getDirectives(), ls, ls);
 	}
 
 }

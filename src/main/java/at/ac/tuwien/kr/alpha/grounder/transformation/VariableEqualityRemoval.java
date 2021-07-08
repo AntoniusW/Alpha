@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2017-2018, the Alpha Team.
+/*
+ * Copyright (c) 2017-2021, the Alpha Team.
  * All rights reserved.
  *
  * Additional changes made by Siemens.
@@ -27,7 +27,6 @@
  */
 package at.ac.tuwien.kr.alpha.grounder.transformation;
 
-import at.ac.tuwien.kr.alpha.common.atoms.Atom;
 import at.ac.tuwien.kr.alpha.common.atoms.ComparisonLiteral;
 import at.ac.tuwien.kr.alpha.common.atoms.Literal;
 import at.ac.tuwien.kr.alpha.common.program.NormalProgram;
@@ -49,8 +48,6 @@ import java.util.Map;
 
 /**
  * Removes variable equalities from rules by replacing one variable with the other.
- *
- * Copyright (c) 2017-2020, the Alpha Team.
  */
 public class VariableEqualityRemoval extends ProgramTransformation<NormalProgram, NormalProgram> {
 
@@ -108,7 +105,6 @@ public class VariableEqualityRemoval extends ProgramTransformation<NormalProgram
 		}
 
 		List<Literal> rewrittenBody = new ArrayList<>(rule.getBody());
-		NormalHead rewrittenHead = rule.isConstraint() ? null : new NormalHead(rule.getHeadAtom());
 
 		// Use substitution for actual replacement.
 		Unifier replacementSubstitution = new Unifier();
@@ -127,6 +123,7 @@ public class VariableEqualityRemoval extends ProgramTransformation<NormalProgram
 			Literal literal = bodyIterator.next();
 			if (equalitiesToRemove.contains(literal)) {
 				bodyIterator.remove();
+				continue;
 			}
 			for (int i = 0; i < literal.getTerms().size(); i++) {
 				Term replaced = literal.getTerms().get(i).substitute(replacementSubstitution);
@@ -134,13 +131,7 @@ public class VariableEqualityRemoval extends ProgramTransformation<NormalProgram
 			}
 		}
 		// Replace variables in head.
-		if (rewrittenHead != null) {
-			Atom headAtom = rewrittenHead.getAtom();
-			for (int i = 0; i < headAtom.getTerms().size(); i++) {
-				Term replaced = headAtom.getTerms().get(i).substitute(replacementSubstitution);
-				headAtom.getTerms().set(i, replaced);
-			}
-		}
+		NormalHead rewrittenHead = rule.isConstraint() ? null : new NormalHead(rule.getHeadAtom().substitute(replacementSubstitution));
 		return new NormalRule(rewrittenHead, rewrittenBody);
 	}
 }

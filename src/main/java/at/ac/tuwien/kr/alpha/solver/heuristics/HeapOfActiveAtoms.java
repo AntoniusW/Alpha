@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2018-2019 Siemens AG
+/*
+ * Copyright (c) 2018-2020 Siemens AG
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -28,8 +28,8 @@ package at.ac.tuwien.kr.alpha.solver.heuristics;
 import at.ac.tuwien.kr.alpha.common.NoGood;
 import at.ac.tuwien.kr.alpha.common.NoGoodInterface.Type;
 import at.ac.tuwien.kr.alpha.solver.BinaryNoGoodPropagationEstimation;
-import at.ac.tuwien.kr.alpha.solver.ChoiceInfluenceManager;
 import at.ac.tuwien.kr.alpha.solver.ChoiceManager;
+import at.ac.tuwien.kr.alpha.solver.InfluenceManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -160,7 +160,7 @@ public class HeapOfActiveAtoms {
 	 * @param newNoGood a new nogood, the atoms occurring in which will be initialized
 	 */
 	private void initActivityMOMs(NoGood newNoGood) {
-		LOGGER.debug("Initializing activity scores with MOMs");
+		LOGGER.trace("Initializing activity scores with MOMs for nogood: " + newNoGood);
 		for (int literal : newNoGood) {
 			int atom = atomOf(literal);
 			if (!incrementedActivityScores[atom]) { // update initial value as long as not incremented yet by VSIDS
@@ -258,7 +258,7 @@ public class HeapOfActiveAtoms {
 
 	}
 
-	private class ChoicePointActivityListener implements ChoiceInfluenceManager.ActivityListener {
+	private class ChoicePointActivityListener implements InfluenceManager.ActivityListener {
 
 		@Override
 		public void callbackOnChanged(int atom, boolean active) {

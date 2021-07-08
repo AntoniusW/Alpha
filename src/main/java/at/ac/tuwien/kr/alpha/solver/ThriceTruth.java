@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2016, the Alpha Team.
+/*
+ * Copyright (c) 2016-2018, 2020, the Alpha Team.
  * All rights reserved.
  *
  * Additional changes made by Siemens.
@@ -54,6 +54,15 @@ public enum ThriceTruth implements Truth {
 
 	public static ThriceTruth valueOf(boolean value) {
 		return value ? TRUE : FALSE;
+	}
+
+	public static ThriceTruth fromChar(char signChar) {
+		for (ThriceTruth value : values()) {
+			if (value.asString.equals(String.valueOf(signChar))) {
+				return value;
+			}
+		}
+		throw new IllegalArgumentException("Unknown " + ThriceTruth.class.getSimpleName() + ": " + signChar);
 	}
 
 	/**

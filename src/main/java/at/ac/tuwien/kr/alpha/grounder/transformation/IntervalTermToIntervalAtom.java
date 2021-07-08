@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2017-2018, the Alpha Team.
+/*
+ * Copyright (c) 2017-2020, the Alpha Team.
  * All rights reserved.
  *
  * Additional changes made by Siemens.
@@ -98,8 +98,10 @@ public class IntervalTermToIntervalAtom extends ProgramTransformation<NormalProg
 			if (term instanceof FunctionTerm) {
 				// Rewrite function terms recursively.
 				FunctionTerm rewrittenFunctionTerm = rewriteFunctionTerm((FunctionTerm) term, intervalReplacement);
-				termList.set(i, rewrittenFunctionTerm);
-				didChange = true;
+				if (rewrittenFunctionTerm != term) {
+					termList.set(i, rewrittenFunctionTerm);
+					didChange = true;
+				}
 			}
 		}
 		if (didChange) {

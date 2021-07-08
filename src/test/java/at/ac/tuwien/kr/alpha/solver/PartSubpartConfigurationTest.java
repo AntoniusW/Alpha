@@ -28,11 +28,9 @@ package at.ac.tuwien.kr.alpha.solver;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertFalse;
 
@@ -41,54 +39,54 @@ import static org.junit.Assert.assertFalse;
  *
  */
 public class PartSubpartConfigurationTest extends AbstractSolverTests {
-	@Test(timeout = 1000)
-	public void testN2() throws IOException {
+	@Test(timeout = 60000)
+	public void testN2() {
 		testPartSubpart(2);
 	}
 
 	@Test(timeout = 60000)
 	@Ignore("disabled to save resources during CI")
-	public void testN4() throws IOException {
+	public void testN4() {
 		testPartSubpart(4);
 	}
 
 	@Test(timeout = 60000)
 	@Ignore("disabled to save resources during CI")
-	public void testN8() throws IOException {
+	public void testN8() {
 		testPartSubpart(8);
 	}
 
 	@Test(timeout = 60000)
 	@Ignore("disabled to save resources during CI")
-	public void testN16() throws IOException {
+	public void testN16() {
 		testPartSubpart(16);
 	}
 
 	@Test(timeout = 61000)
 	@Ignore("disabled to save resources during CI")
-	public void testN32() throws IOException {
+	public void testN32() {
 		testPartSubpart(32);
 	}
 
 	@Test(timeout = 60000)
 	@Ignore("disabled to save resources during CI")
-	public void testN60() throws IOException {
+	public void testN60() {
 		testPartSubpart(60);
 	}
 
 	@Test(timeout = 60000)
 	@Ignore("disabled to save resources during CI")
-	public void testN75() throws IOException {
+	public void testN75() {
 		testPartSubpart(75);
 	}
 
 	@Test(timeout = 60000)
 	@Ignore("disabled to save resources during CI")
-	public void testN100() throws IOException {
+	public void testN100() {
 		testPartSubpart(100);
 	}
 
-	private void testPartSubpart(int n) throws IOException {
+	private void testPartSubpart(int n) {
 		List<String> rules = new ArrayList<>();
 		for (int i = 1; i <= n; i++) {
 			rules.add(String.format("n(%d).", i));
@@ -111,6 +109,6 @@ public class PartSubpartConfigurationTest extends AbstractSolverTests {
 
 	private String concat(List<String> rules) {
 		String ls = System.lineSeparator();
-		return rules.stream().collect(Collectors.joining(ls));
+		return String.join(ls, rules);
 	}
 }

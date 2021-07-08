@@ -26,10 +26,13 @@
 package at.ac.tuwien.kr.alpha.solver;
 
 import java.io.PrintStream;
+import java.util.Map;
 
 public interface SolverMaintainingStatistics {
 
 	int getNumberOfChoices();
+
+	Map<String, Integer> getNumberOfChoicesPerBranchingHeuristic();
 
 	int getNumberOfBacktracks();
 

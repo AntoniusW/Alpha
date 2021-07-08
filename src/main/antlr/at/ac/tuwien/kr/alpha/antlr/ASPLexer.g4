@@ -40,6 +40,11 @@ AGGREGATE_MAX : '#max';
 AGGREGATE_MIN : '#min';
 AGGREGATE_SUM : '#sum';
 
+HEU_SIGN_T : 'T';
+HEU_SIGN_M : 'M';
+HEU_SIGN_F : 'F';
+HEU_BODY_SIGN : (HEU_SIGN_T | HEU_SIGN_M | HEU_SIGN_F)+;    // needed for multi-char heuristic signs
+
 ID : ('a'..'z') ( 'A'..'Z' | 'a'..'z' | '0'..'9' | '_' )*;
 VARIABLE : ('A'..'Z') ( 'A'..'Z' | 'a'..'z' | '0'..'9' | '_' )*;
 NUMBER : '0' | ('1'..'9') ('0'..'9')*;

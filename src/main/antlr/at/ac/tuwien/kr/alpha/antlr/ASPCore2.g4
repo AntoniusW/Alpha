@@ -5,7 +5,6 @@ import ASPLexer;
 /* The ASP-Core-2 grammar in ANTLR v4 based on
  * https://www.mat.unical.it/aspcomp2013/files/ASP-CORE-2.01c.pdf
  * (sections 4 and 5, pages 10-12).
- * It is extended a bit to parse widespread syntax (e.g. used by gringo/clasp).
  */
 
 program : statements? query? EOF;
@@ -17,8 +16,7 @@ query : classical_literal QUERY_MARK;
 statement : head DOT                     # statement_fact
           | CONS body DOT                # statement_constraint
           | head CONS body DOT           # statement_rule
-          | WCONS body? DOT SQUARE_OPEN weight_at_level SQUARE_CLOSE # statement_weightConstraint
-          | directive                    # statement_directive;   // NOT Core2 syntax.
+          | WCONS body? DOT weight_annotation        # statement_weightConstraint;
 
 head : disjunction | choice;
 
@@ -40,13 +38,19 @@ aggregate_element : basic_terms? (COLON naf_literals?)?;
 
 aggregate_function : AGGREGATE_COUNT | AGGREGATE_MAX | AGGREGATE_MIN | AGGREGATE_SUM;
 
+weight_annotation : SQUARE_OPEN weight_at_level SQUARE_CLOSE;
+
 weight_at_level : term (AT term)? (COMMA terms)?;
 
 naf_literals : naf_literal (COMMA naf_literals)?;
 
-naf_literal : NAF? (external_atom | classical_literal | builtin_atom);
+naf_literal : NAF? atom;
 
-classical_literal : MINUS? ID (PAREN_OPEN terms PAREN_CLOSE)?;
+atom : (classical_literal | builtin_atom);
+
+classical_literal : MINUS? basic_atom;
+
+basic_atom : ID (PAREN_OPEN terms PAREN_CLOSE)?;
 
 builtin_atom : term binop term;
 
@@ -58,10 +62,9 @@ term : ID                                   # term_const
      | ID (PAREN_OPEN terms? PAREN_CLOSE)   # term_func
      | NUMBER                               # term_number
      | QUOTED_STRING                        # term_string
-     | VARIABLE                             # term_variable
+     | variable                             # term_variable
      | ANONYMOUS_VARIABLE                   # term_anonymousVariable
      | PAREN_OPEN term PAREN_CLOSE          # term_parenthesisedTerm
-     | interval                             # term_interval // Syntax extension.
      | MINUS term                           # term_minusArithTerm
      |<assoc=right> term POWER term         # term_powerArithTerm
      | term (TIMES | DIV | MODULO) term     # term_timesdivmodArithTerm
@@ -69,21 +72,15 @@ term : ID                                   # term_const
      | term BITXOR term                     # term_bitxorArithTerm
      ;
 
-interval : lower = (NUMBER | VARIABLE) DOT DOT upper = (NUMBER | VARIABLE); // NOT Core2 syntax, but widespread
-
-external_atom : MINUS? AMPERSAND ID (SQUARE_OPEN input = terms SQUARE_CLOSE)? (PAREN_OPEN output = terms PAREN_CLOSE)?; // NOT Core2 syntax.
-
-directive : directive_enumeration;  // NOT Core2 syntax, allows solver specific directives. Further directives shall be added here.
-
-directive_enumeration : SHARP 'enumeration_predicate_is' ID DOT;  // NOT Core2 syntax, used for aggregate translation.
-
 basic_terms : basic_term (COMMA basic_terms)? ;
 
 basic_term : ground_term | variable_term;
 
 ground_term : /*SYMBOLIC_CONSTANT*/ ID | QUOTED_STRING | MINUS? NUMBER;
 
-variable_term : VARIABLE | ANONYMOUS_VARIABLE;
+variable_term : variable | ANONYMOUS_VARIABLE;
+
+variable : VARIABLE;
 
 answer_set : CURLY_OPEN classical_literal? (COMMA classical_literal)* CURLY_CLOSE;
 

@@ -27,6 +27,15 @@ public class ConstantTerm<T extends Comparable<T>> extends Term {
 
 	@SuppressWarnings("unchecked")
 	public static <T extends Comparable<T>> ConstantTerm<T> getSymbolicInstance(String symbol) {
+		switch (symbol) {
+			case "true": return getSymbolicInstance(true);
+			case "false": return getSymbolicInstance(false);
+			default: return (ConstantTerm<T>) INTERNER.intern(new ConstantTerm<>(symbol, true));
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <T extends Comparable<T>> ConstantTerm<T> getSymbolicInstance(boolean symbol) {
 		return (ConstantTerm<T>) INTERNER.intern(new ConstantTerm<>(symbol, true));
 	}
 

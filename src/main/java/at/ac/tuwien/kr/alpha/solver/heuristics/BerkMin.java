@@ -1,17 +1,17 @@
 /**
  * Copyright (c) 2016-2019 Siemens AG
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1) Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2) Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -51,7 +51,7 @@ import static at.ac.tuwien.kr.alpha.solver.ThriceTruth.TRUE;
  */
 public class BerkMin implements ActivityBasedBranchingHeuristic {
 	private static final Logger LOGGER = LoggerFactory.getLogger(BerkMin.class);
-	
+
 	static final double DEFAULT_ACTIVITY = 0.0;
 	static final int DEFAULT_SIGN_COUNTER = 0;
 
@@ -64,6 +64,15 @@ public class BerkMin implements ActivityBasedBranchingHeuristic {
 
 	private Map<Integer, Double> activityCounters = new LinkedHashMap<>();
 	private Map<Integer, Integer> signCounters = new LinkedHashMap<>();
+
+	public Map<Integer, Double> getActivityCounters() {
+		return activityCounters;
+	}
+
+	public Deque<NoGood> getStackOfNoGoods() {
+		return stackOfNoGoods;
+	}
+
 	private Deque<NoGood> stackOfNoGoods = new ArrayDeque<>();
 	private int decayPeriod;
 	private double decayFactor;
@@ -151,7 +160,8 @@ public class BerkMin implements ActivityBasedBranchingHeuristic {
 
 	@Override
 	public double getActivity(int literal) {
-		return activityCounters.getOrDefault(atomOf(literal), DEFAULT_ACTIVITY);
+		int key = atomOf(literal);
+		return activityCounters.getOrDefault(key, DEFAULT_ACTIVITY);
 	}
 
 	/**
@@ -162,16 +172,17 @@ public class BerkMin implements ActivityBasedBranchingHeuristic {
 	 * nogood in the stack, then the one after that and so on.
 	 */
 	@Override
-	public int chooseLiteral() {
-		int atom = chooseAtom();
+	public int chooseLiteral(Set<Integer> admissibleChoices) {
+		int atom = chooseAtom(admissibleChoices);
 		boolean sign = chooseSign(atom);
 		return atomToLiteral(atom, sign);
 	}
-	
-	protected int chooseAtom() {
+
+	@Override
+	public int chooseAtom(Set<Integer> admissibleChoices) {
 		for (NoGood noGood : stackOfNoGoods) {
 			if (assignment.isUndefined(noGood)) {
-				int mostActiveAtom = getMostActiveChoosableAtom(noGood);
+				int mostActiveAtom = getMostActiveChoosableAtom(noGood, admissibleChoices);
 				if (mostActiveAtom != DEFAULT_CHOICE_ATOM) {
 					return mostActiveAtom;
 				}
@@ -179,7 +190,7 @@ public class BerkMin implements ActivityBasedBranchingHeuristic {
 		}
 		return DEFAULT_CHOICE_ATOM;
 	}
-	
+
 	private boolean chooseSign(int atom) {
 		if (assignment.getTruth(atom) == ThriceTruth.MBT) {
 			return true;
@@ -217,7 +228,7 @@ public class BerkMin implements ActivityBasedBranchingHeuristic {
 		// 2. make check cheaper, e.g. by using dedicated atom IDs (e.g. even
 		// integers for rule bodies, uneven for other atoms)
 	}
-	
+
 	private void incrementSignCounter(Integer literal) {
 		if (choiceManager.isAtomChoice(atomOf(literal))) {
 			signCounters.compute(literal, (k, v) -> (v == null ? DEFAULT_SIGN_COUNTER : v) + 1);
@@ -235,6 +246,7 @@ public class BerkMin implements ActivityBasedBranchingHeuristic {
 
 	/**
 	 * Gets the most recent conflict that is still violated.
+	 * 
 	 * @return the violated nogood closest to the top of the stack of nogoods.
 	 */
 	NoGood getCurrentTopClause() {
@@ -245,30 +257,35 @@ public class BerkMin implements ActivityBasedBranchingHeuristic {
 		}
 		return null;
 	}
-	
+
 	/**
 	 * If {@code noGood != null}, returns the most active unassigned literal from {@code noGood}. Else, returns the most active atom of all the known atoms.
+	 * 
 	 * @param noGood
 	 * @return
 	 */
-	private int getMostActiveChoosableAtom(NoGood noGood) {
+	protected int getMostActiveChoosableAtom(NoGood noGood, Set<Integer> admissibleChoices) {
+		Stream<Integer> streamOfChoosableAtoms;
 		if (noGood != null) {
-			return getMostActiveChoosableAtom(noGood.stream().boxed().map(Literals::atomOf));
+			streamOfChoosableAtoms = noGood.stream().boxed().map(Literals::atomOf);
 		} else {
-			return getMostActiveChoosableAtom(activityCounters.keySet().stream());
+			streamOfChoosableAtoms = activityCounters.keySet().stream();
 		}
+		if (admissibleChoices != null) {
+			streamOfChoosableAtoms = streamOfChoosableAtoms.filter(admissibleChoices::contains);
+		}
+		return getMostActiveChoosableAtom(streamOfChoosableAtoms);
 	}
-	
-	protected int getMostActiveChoosableAtom(Stream<Integer> streamOfLiterals) {
-		return streamOfLiterals
-			.map(Literals::atomOf)
-			.filter(this::isUnassigned)
-			.filter(choiceManager::isActiveChoiceAtom)
-			.max(Comparator.comparingDouble(this::getActivity))
+
+	protected int getMostActiveChoosableAtom(Stream<Integer> streamOfAtoms) {
+		return streamOfAtoms
+				.filter(this::isUnassigned)
+				.filter(choiceManager::isActiveChoiceAtom)
+				.max(Comparator.comparingDouble(this::getActivity))
 			.orElse(DEFAULT_CHOICE_ATOM);
 	}
 
-	private boolean isUnassigned(int atom) {
+	protected boolean isUnassigned(int atom) {
 		ThriceTruth truth = assignment.getTruth(atom);
 		return truth != FALSE && truth != TRUE; // do not use assignment.isAssigned(atom) because we may also choose MBTs
 	}

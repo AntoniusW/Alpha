@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2017-2019, the Alpha Team.
+/*
+ * Copyright (c) 2017-2021, the Alpha Team.
  * All rights reserved.
  *
  * Additional changes made by Siemens.
@@ -29,12 +29,23 @@ package at.ac.tuwien.kr.alpha.solver;
 
 import at.ac.tuwien.kr.alpha.common.Assignment;
 import at.ac.tuwien.kr.alpha.common.NoGood;
+import at.ac.tuwien.kr.alpha.common.heuristics.HeuristicDirectiveValues;
+import at.ac.tuwien.kr.alpha.solver.heuristics.domspec.DefaultDomainSpecificHeuristicsStore;
+import at.ac.tuwien.kr.alpha.solver.heuristics.domspec.DomainSpecificHeuristicsStore;
+import at.ac.tuwien.kr.alpha.solver.heuristics.domspec.EmptyDomainSpecificHeuristicsStore;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.Stack;
 import java.util.stream.Collectors;
 
 import static at.ac.tuwien.kr.alpha.Util.oops;
@@ -42,43 +53,52 @@ import static at.ac.tuwien.kr.alpha.common.Literals.atomToLiteral;
 
 /**
  * This class provides functionality for choice point management, detection of active choice points, etc.
- * Copyright (c) 2017-2019, the Alpha Team.
+ * Copyright (c) 2017-2020, the Alpha Team.
  */
 public class ChoiceManager implements Checkable {
 
-	public static final int DEFAULT_CHOICE_ATOM = 0;
+	private static final int DEFAULT_CHOICE_ATOM = 0;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ChoiceManager.class);
 	private final WritableAssignment assignment;
 	private final Stack<Choice> choiceStack;
+	private final DomainSpecificHeuristicsStore domainSpecificHeuristics;
 	private final Map<Integer, Set<Integer>> headsToBodies = new HashMap<>();
 	private final Map<Integer, Integer> bodiesToHeads = new HashMap<>();
 
-	// An "influence manager" managing active choice points and heuristics.
-	private final ChoiceInfluenceManager choicePointInfluenceManager;
+	// Two "influence managers" managing active choice points and heuristics.
+	private final ChoicePointInfluenceManager choicePointInfluenceManager;
+	private final HeuristicInfluenceManager heuristicInfluenceManager;
 
 	private final NoGoodStore store;
 	private final BinaryNoGoodPropagationEstimation bnpEstimation;
+	private final ChoiceManagerStatistics choiceManagerStatistics = new ChoiceManagerStatistics();
 
 	private boolean checksEnabled;
 	private DebugWatcher debugWatcher;
 
-	private int choices;
-	private int backtracks;
-	private int backtracksWithinBackjumps;
-	private int backjumps;
-
 	public ChoiceManager(WritableAssignment assignment, NoGoodStore store) {
+		this(assignment, store, null);
+	}
+
+	protected ChoiceManager(WritableAssignment assignment, NoGoodStore store, DomainSpecificHeuristicsStore domainSpecificHeuristicsStore) {
 		this.store = store;
 		this.assignment = assignment;
-		this.choicePointInfluenceManager = new ChoiceInfluenceManager(assignment);
+		this.choicePointInfluenceManager = new ChoicePointInfluenceManager(assignment);
+		this.heuristicInfluenceManager = new HeuristicInfluenceManager(assignment);
 		this.choiceStack = new Stack<>();
+		if (domainSpecificHeuristicsStore != null) {
+			this.domainSpecificHeuristics = domainSpecificHeuristicsStore;
+		} else {
+			this.domainSpecificHeuristics = new DefaultDomainSpecificHeuristicsStore();
+		}
+		this.domainSpecificHeuristics.setChoiceManager(this);
 		assignment.setCallback(this);
 		this.bnpEstimation = store instanceof BinaryNoGoodPropagationEstimation
 				? (BinaryNoGoodPropagationEstimation)store
 				: null;
 	}
-	
+
 	public WritableAssignment getAssignment() {
 		return assignment;
 	}
@@ -96,7 +116,8 @@ public class ChoiceManager implements Checkable {
 	public void setChecksEnabled(boolean checksEnabled) {
 		this.checksEnabled = checksEnabled;
 		this.choicePointInfluenceManager.setChecksEnabled(checksEnabled);
-		
+		this.heuristicInfluenceManager.setChecksEnabled(checksEnabled);
+
 		if (checksEnabled) {
 			debugWatcher = new DebugWatcher();
 		} else {
@@ -108,39 +129,16 @@ public class ChoiceManager implements Checkable {
 		return checksEnabled;
 	}
 
-	public void callbackOnChanged(int atom) {
+	void callbackOnChanged(int atom) {
 		choicePointInfluenceManager.callbackOnChanged(atom);
+		heuristicInfluenceManager.callbackOnChanged(atom);
 	}
 
-	public int getBackjumps() {
-		return backjumps;
+	public ChoiceManagerStatistics getStatistics() {
+		return choiceManagerStatistics;
 	}
 
-	/**
-	 * Returns the total number of backtracks.
-	 * 
-	 * The number of backtracks excluding those within backjumps is {@link #getBacktracks()} minus {@link #getBacktracksWithinBackjumps()}.
-	 * 
-	 * @return the total number of backtracks
-	 */
-	public int getBacktracks() {
-		return backtracks;
-	}
-
-	/**
-	 * Returns the number of backtracks made within backjumps.
-	 * 
-	 * @return the number of backtracks made within backjumps.
-	 */
-	public int getBacktracksWithinBackjumps() {
-		return backtracksWithinBackjumps;
-	}
-
-	public int getChoices() {
-		return choices;
-	}
-
-	public void updateAssignments() {
+	void updateAssignments() {
 		LOGGER.trace("Updating assignments of ChoiceManager.");
 		if (checksEnabled) {
 			choicePointInfluenceManager.checkActiveChoicePoints();
@@ -149,13 +147,13 @@ public class ChoiceManager implements Checkable {
 
 	public void choose(Choice choice) {
 		if (!choice.isBacktracked()) {
-			choices++;
+			choiceManagerStatistics.incrementChoices();
 		}
 
 		if (assignment.choose(choice.getAtom(), choice.getValue()) != null) {
 			throw oops("Picked choice is incompatible with current assignment");
 		}
-		LOGGER.debug("Choice {} is {}@{}", choices, choice, assignment.getDecisionLevel());
+		LOGGER.debug("Choice {} is {}@{}", choiceManagerStatistics.getChoices(), choice, assignment.getDecisionLevel());
 
 		if (debugWatcher != null) {
 			debugWatcher.runWatcher();
@@ -164,12 +162,12 @@ public class ChoiceManager implements Checkable {
 		choiceStack.push(choice);
 	}
 
-	public void backjump(int target) {
+	void backjump(int target) {
 		if (target < 0) {
 			throw oops("Backjumping to decision level less than 0");
 		}
 
-		backjumps++;
+		choiceManagerStatistics.incrementBackjumps();
 		LOGGER.debug("Backjumping to decision level {}.", target);
 
 		// Remove everything above the target level, but keep the target level unchanged.
@@ -177,8 +175,8 @@ public class ChoiceManager implements Checkable {
 		assignment.backjump(target);
 		while (currentDecisionLevel-- > target) {
 			final Choice choice = choiceStack.pop();
-			backtracksWithinBackjumps++;
-			backtracks++;
+			choiceManagerStatistics.incrementBacktracksWithinBackjumps();
+			choiceManagerStatistics.incrementBacktracks();
 			LOGGER.debug("Backjumping removed choice {}", choice);
 		}
 	}
@@ -190,7 +188,7 @@ public class ChoiceManager implements Checkable {
 	 *
 	 * In order to analyze the choice that was backtracked, use the more expensive {@link #backtrackSlow()}.
 	 */
-	public void backtrackFast() {
+	void backtrackFast() {
 		backtrack();
 
 		final Choice choice = choiceStack.pop();
@@ -204,9 +202,9 @@ public class ChoiceManager implements Checkable {
 	 * their plans.
 	 *
 	 * @return the assignment entry of the choice being backtracked, or {@code null} if the choice cannot be
-	 *         backtracked any futher (it already is a backtracking choice)
+	 *         backtracked any further (it already is a backtracking choice)
 	 */
-	public Assignment.Entry backtrackSlow() {
+	Assignment.Entry backtrackSlow() {
 		final Choice choice = choiceStack.pop();
 		final Assignment.Entry lastChoiceEntry = assignment.get(choice.getAtom());
 
@@ -226,12 +224,23 @@ public class ChoiceManager implements Checkable {
 	 */
 	private void backtrack() {
 		store.backtrack();
-		backtracks++;
+		choiceManagerStatistics.incrementBacktracks();
 	}
 
 	void addChoiceInformation(Pair<Map<Integer, Integer>, Map<Integer, Integer>> choiceAtoms, Map<Integer, Set<Integer>> headsToBodies) {
 		choicePointInfluenceManager.addInformation(choiceAtoms);
 		addHeadsToBodies(headsToBodies);
+	}
+
+	void addHeuristicInformation(Pair<Map<Integer, Integer[]>, Map<Integer, Integer[]>> heuristicAtoms, Map<Integer, HeuristicDirectiveValues> heuristicValues) {
+		addInformation(heuristicValues);
+		heuristicInfluenceManager.addInformation(heuristicAtoms, heuristicValues);
+	}
+
+	private void addInformation(Map<Integer, HeuristicDirectiveValues> heuristicValues) {
+		for (Entry<Integer, HeuristicDirectiveValues> entry : heuristicValues.entrySet()) {
+			domainSpecificHeuristics.addInfo(entry.getKey(), entry.getValue());
+		}
 	}
 
 	public void growForMaxAtomId(int maxAtomId) {
@@ -248,11 +257,7 @@ public class ChoiceManager implements Checkable {
 	}
 
 	private void addHeadsToBodies(Integer head, Set<Integer> bodies) {
-		Set<Integer> existingBodies = this.headsToBodies.get(head);
-		if (existingBodies == null) {
-			existingBodies = new HashSet<>();
-			this.headsToBodies.put(head, existingBodies);
-		}
+		Set<Integer> existingBodies = this.headsToBodies.computeIfAbsent(head, k -> new HashSet<>());
 		existingBodies.addAll(bodies);
 	}
 
@@ -260,6 +265,10 @@ public class ChoiceManager implements Checkable {
 		for (Integer body : bodies) {
 			bodiesToHeads.put(body, head);
 		}
+	}
+
+	public DomainSpecificHeuristicsStore getDomainSpecificHeuristics() {
+		return domainSpecificHeuristics;
 	}
 
 	public boolean isActiveChoiceAtom(int atom) {
@@ -270,20 +279,67 @@ public class ChoiceManager implements Checkable {
 		return choicePointInfluenceManager.getNextActiveAtomOrDefault(DEFAULT_CHOICE_ATOM);
 	}
 
+	/**
+	 * @return the number of active choice points
+	 */
+	public int getNumberOfActiveChoicePoints() {
+		return choicePointInfluenceManager.activeChoicePointsAtoms.size();
+	}
+
 	public boolean isAtomChoice(int atom) {
 		return choicePointInfluenceManager.isAtomInfluenced(atom);
 	}
-	
-	public void setChoicePointActivityListener(ChoiceInfluenceManager.ActivityListener activityListener) {
+
+	public void setChoicePointActivityListener(InfluenceManager.ActivityListener activityListener) {
 		choicePointInfluenceManager.setActivityListener(activityListener);
 	}
-	
+
+	public void setHeuristicActivityListener(InfluenceManager.ActivityListener activityListener) {
+		heuristicInfluenceManager.setActivityListener(activityListener);
+	}
+
 	public Integer getHeadDerivedByChoiceAtom(int choiceAtomId) {
 		return bodiesToHeads.get(choiceAtomId);
 	}
 
+	/**
+	 * Gets the active choice atoms representing bodies of rules that can derive the given head atom.
+	 * @param headAtomId internal ID of head atom
+	 * @return a subset of all active choice atoms that can derive {@code headAtomId}.
+	 */
+	public Set<Integer> getActiveChoiceAtomsDerivingHead(int headAtomId) {
+		Set<Integer> bodies = headsToBodies.get(headAtomId);
+		if (bodies == null) {
+			return Collections.emptySet();
+		}
+		Set<Integer> activeBodies = new HashSet<>();
+		for (Integer body : bodies) {
+			if (isActiveChoiceAtom(body)) {
+				activeBodies.add(body);
+			}
+		}
+		return activeBodies;
+	}
+
+	/**
+	 * Returns an unmodifiable view on the current choice stack which does not contain choices that have been removed during backtracking.
+	 *
+	 * @return an unmodifiable view on the current choice stack
+	 */
+	List<Choice> getChoiceStack() {
+		return Collections.unmodifiableList(choiceStack);
+	}
+
 	public BinaryNoGoodPropagationEstimation getBinaryNoGoodPropagationEstimation() {
 		return bnpEstimation;
+	}
+
+	static ChoiceManager withoutDomainSpecificHeuristics(WritableAssignment assignment, NoGoodStore store) {
+		return new ChoiceManager(assignment, store, new EmptyDomainSpecificHeuristicsStore());
+	}
+
+	static ChoiceManager withDomainSpecificHeuristics(WritableAssignment assignment, NoGoodStore store) {
+		return new ChoiceManager(assignment, store);
 	}
 
 	/**

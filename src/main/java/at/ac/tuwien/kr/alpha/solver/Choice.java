@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017-2018, the Alpha Team.
+ * Copyright (c) 2017-2019, the Alpha Team.
  * All rights reserved.
  *
  * Additional changes made by Siemens.
@@ -55,6 +55,13 @@ class Choice {
 
 	public boolean isBacktracked() {
 		return backtracked;
+	}
+	
+	/**
+	 * @return {@link #getAtom()} if {@link #getValue()} is {@code true}, else {@link #getAtom()} {@code * -1}.
+	 */
+	public int toSignedInteger() {
+		return (value ? 1 : -1) * atom;
 	}
 
 	@Override

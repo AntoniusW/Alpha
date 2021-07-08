@@ -25,6 +25,7 @@
  */
 package at.ac.tuwien.kr.alpha;
 
+import at.ac.tuwien.kr.alpha.common.AnswerSet;
 import at.ac.tuwien.kr.alpha.common.AtomStore;
 import at.ac.tuwien.kr.alpha.common.NoGood;
 import at.ac.tuwien.kr.alpha.common.Predicate;
@@ -36,7 +37,10 @@ import at.ac.tuwien.kr.alpha.common.terms.VariableTerm;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
+
+import static org.junit.Assert.fail;
 
 /**
  * Provides utility methods for test cases
@@ -57,7 +61,7 @@ public class TestUtil {
 		return new BasicAtom(Predicate.getInstance(predicateName, terms.length), terms);
 	}
 
-	public static Atom atom(String predicateName, int... termInts) {
+	public static BasicAtom atom(String predicateName, int... termInts) {
 		Term[] terms = new Term[termInts.length];
 		for (int i = 0; i < termInts.length; i++) {
 			terms[i] = ConstantTerm.getInstance(termInts[i]);
@@ -67,6 +71,19 @@ public class TestUtil {
 	
 	public static void printNoGoods(AtomStore atomStore, Collection<NoGood> noGoods) {
 		System.out.println(noGoods.stream().map(atomStore::noGoodToString).collect(Collectors.toSet()));
+	}
+
+	public static void checkExpectedAtomsInAnswerSet(AnswerSet answerSet, List<BasicAtom> atomsExpectedInAnswerSet, List<BasicAtom> atomsNotExpectedInAnswerSet) {
+		for (BasicAtom atom : atomsExpectedInAnswerSet) {
+			if (!answerSet.getPredicateInstances(atom.getPredicate()).contains(atom)) {
+				fail("Answer set does not contain " + atom);
+			}
+		}
+		for (BasicAtom atom : atomsNotExpectedInAnswerSet) {
+			if (answerSet.getPredicateInstances(atom.getPredicate()).contains(atom)) {
+				fail("Answer set contains " + atom);
+			}
+		}
 	}
 
 }

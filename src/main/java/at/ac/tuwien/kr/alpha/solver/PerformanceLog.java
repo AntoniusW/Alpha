@@ -60,7 +60,7 @@ public class PerformanceLog {
 	 */
 	public void infoIfTimeForOutput(Logger logger) {
 		long currentTime = System.currentTimeMillis();
-		int currentNumberOfChoices = choiceManager.getChoices();
+		int currentNumberOfChoices = choiceManager.getStatistics().getChoices();
 		if (currentTime >= timeLastPerformanceLog + msBetweenOutputs) {
 			logger.info("Decisions in {}s: {}", (currentTime - timeLastPerformanceLog) / 1000.0f, currentNumberOfChoices - numberOfChoicesLastPerformanceLog);
 			timeLastPerformanceLog = currentTime;

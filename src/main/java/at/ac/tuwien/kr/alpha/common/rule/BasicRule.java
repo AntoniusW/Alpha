@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2019, the Alpha Team.
+/*
+ * Copyright (c) 2019-2021, the Alpha Team.
  * All rights reserved.
  * 
  * Additional changes made by Siemens.
@@ -27,14 +27,14 @@
  */
 package at.ac.tuwien.kr.alpha.common.rule;
 
-import java.util.List;
-
 import at.ac.tuwien.kr.alpha.common.atoms.Literal;
 import at.ac.tuwien.kr.alpha.common.rule.head.Head;
 
+import java.util.List;
+
 /**
- * Represents a non-ground rule or a constraint. A @{link BasicRule} has a general {@link Head}, meaning both choice heads and disjunctive heads are permissible.
- * This implementation represents a rule after being parsed from a given ASP program, but before being transformed into a @{link NormalRule}.
+ * Represents a non-ground rule or a constraint. A {@link BasicRule} has a general {@link Head}, meaning both choice heads and disjunctive heads are permissible.
+ * This implementation represents a rule after being parsed from a given ASP program, but before being transformed into a {@link NormalRule}.
  */
 public class BasicRule extends AbstractRule<Head> {
 

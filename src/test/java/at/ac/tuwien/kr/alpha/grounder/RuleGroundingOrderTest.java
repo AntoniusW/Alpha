@@ -1,19 +1,19 @@
 /*
  * Copyright (c) 2017-2020, the Alpha Team.
  * All rights reserved.
- * 
+ *
  * Additional changes made by Siemens.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1) Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2) Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -27,19 +27,16 @@
  */
 package at.ac.tuwien.kr.alpha.grounder;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import org.junit.Test;
-
-import java.io.IOException;
-
 import at.ac.tuwien.kr.alpha.api.Alpha;
 import at.ac.tuwien.kr.alpha.common.atoms.Literal;
 import at.ac.tuwien.kr.alpha.common.program.InternalProgram;
 import at.ac.tuwien.kr.alpha.common.rule.InternalRule;
 import at.ac.tuwien.kr.alpha.grounder.parser.ProgramPartParser;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Copyright (c) 2017-2019, the Alpha Team.
@@ -48,9 +45,8 @@ public class RuleGroundingOrderTest {
 
 	private static final ProgramPartParser PROGRAM_PART_PARSER = new ProgramPartParser();
 
-
 	@Test
-	public void groundingOrder() throws IOException {
+	public void groundingOrder() {
 		String aspStr = "h(X,C) :- p(X,Y), q(A,B), r(Y,A), s(C)." +
 				"j(A,B,X,Y) :- r1(A,B), r1(X,Y), r1(A,X), r1(B,Y), A = B." +
 				"p(a) :- b = a.";
@@ -74,14 +70,14 @@ public class RuleGroundingOrderTest {
 	}
 
 	@Test(expected = RuntimeException.class)
-	public void groundingOrderUnsafe() throws IOException {
+	public void groundingOrderUnsafe() {
 		String aspStr = "h(X,C) :- X = Y, Y = C .. 3, C = X.";
 		Alpha system = new Alpha();
 		system.getConfig().setEvaluateStratifiedPart(false);
 		InternalProgram internalPrg = InternalProgram.fromNormalProgram(system.normalizeProgram(system.readProgramString(aspStr)));
 		computeGroundingOrdersForRule(internalPrg, 0);
 	}
-	
+
 	@Test
 	public void testPositionFromWhichAllVarsAreBound_ground() {
 		String aspStr = "a :- b, not c.";
@@ -91,7 +87,7 @@ public class RuleGroundingOrderTest {
 		RuleGroundingOrders rgo0 = computeGroundingOrdersForRule(internalPrg, 0);
 		assertEquals(0, rgo0.getFixedGroundingOrder().getPositionFromWhichAllVarsAreBound());
 	}
-	
+
 	@Test
 	public void testPositionFromWhichAllVarsAreBound_simpleNonGround() {
 		String aspStr = "a(X) :- b(X), not c(X).";

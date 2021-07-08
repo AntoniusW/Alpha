@@ -55,6 +55,7 @@ public class SystemConfig {
 	public static final boolean DEFAULT_DEBUG_INTERNAL_CHECKS = false;
 	public static final boolean DEFAULT_USE_NORMALIZATION_GRID = false;
 	public static final boolean DEFAULT_SORT_ANSWER_SETS = false;
+	public static final boolean DEFAULT_IGNORE_DOMSPEC_HEURISTICS = false;
 	public static final List<Integer> DEFAULT_REPLAY_CHOICES = Collections.emptyList();
 	public static final boolean DEFAULT_STRATIFIED_EVALUATION = true;
 	public static final boolean DEFAULT_DISABLE_NOGOOD_DELETION = false;
@@ -76,6 +77,7 @@ public class SystemConfig {
 	private boolean disableJustificationSearch = SystemConfig.DEFAULT_DISABLE_JUSTIFICATION_SEARCH;
 	private boolean useNormalizationGrid = SystemConfig.DEFAULT_USE_NORMALIZATION_GRID;
 	private boolean sortAnswerSets = SystemConfig.DEFAULT_SORT_ANSWER_SETS;
+	private boolean ignoreDomspecHeuristics = SystemConfig.DEFAULT_IGNORE_DOMSPEC_HEURISTICS;
 	private List<Integer> replayChoices = SystemConfig.DEFAULT_REPLAY_CHOICES;
 	private boolean evaluateStratifiedPart = SystemConfig.DEFAULT_STRATIFIED_EVALUATION;
 	private boolean disableNoGoodDeletion = SystemConfig.DEFAULT_DISABLE_NOGOOD_DELETION;
@@ -194,6 +196,14 @@ public class SystemConfig {
 
 	public void setSortAnswerSets(boolean sortAnswerSets) {
 		this.sortAnswerSets = sortAnswerSets;
+	}
+
+	public boolean isIgnoreDomspecHeuristics() {
+		return ignoreDomspecHeuristics;
+	}
+
+	public void setIgnoreDomspecHeuristics(boolean ignoreDomspecHeuristics) {
+		this.ignoreDomspecHeuristics = ignoreDomspecHeuristics;
 	}
 
 	public List<Integer> getReplayChoices() {

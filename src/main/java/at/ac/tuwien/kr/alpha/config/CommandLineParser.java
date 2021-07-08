@@ -35,8 +35,8 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.text.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,13 +58,13 @@ public class CommandLineParser {
 
 	//@formatter:off
 	/*
-	 * Whenever a new command line option is added, perform the following steps: 
-	 * 1. Add it as a constant option below. 
+	 * Whenever a new command line option is added, perform the following steps:
+	 * 1. Add it as a constant option below.
 	 * 2. Add the constant option into the Options "CLI_OPTS" in the static initializer.
-	 * 3. Add a handler method for it and add the respective map entry in initializeGlobalOptionHandlers 
+	 * 3. Add a handler method for it and add the respective map entry in initializeGlobalOptionHandlers
 	 *    or initializeInputOptionHandlers with a method reference to the handler.
 	 */
-	
+
 	// "special", i.e. non-configuration options
 	private static final Option OPT_HELP = Option.builder("h").longOpt("help").hasArg(false).desc("shows this help").build();
 
@@ -126,7 +126,7 @@ public class CommandLineParser {
 			.desc("Disable stratified evaluation")
 			.build();
 	private static final Option OPT_NO_NOGOOD_DELETION = Option.builder("dnd").longOpt("disableNoGoodDeletion")
-			.desc("disable the deletion of (learned, little active) nogoods (default: " 
+			.desc("disable the deletion of (learned, little active) nogoods (default: "
 					+ SystemConfig.DEFAULT_DISABLE_NOGOOD_DELETION + ")")
 			.build();
 	private static final Option OPT_GROUNDER_TOLERANCE_CONSTRAINTS = Option.builder("gtc").longOpt("grounderToleranceConstraints")
@@ -138,12 +138,15 @@ public class CommandLineParser {
 			.hasArg().argName("tolerance")
 			.build();
 	private static final Option OPT_GROUNDER_ACCUMULATOR_ENABLED = Option.builder("acc").longOpt("enableAccumulator")
-			.desc("activates the accumulator grounding strategy by disabling removal of instances from grounder memory in certain cases (default: " 
+			.desc("activates the accumulator grounding strategy by disabling removal of instances from grounder memory in certain cases (default: "
 					+ SystemConfig.DEFAULT_GROUNDER_ACCUMULATOR_ENABLED + ")")
 			.build();
 	private static final Option OPT_OUTPUT_ATOM_SEPARATOR = Option.builder("sep").longOpt("atomSeparator").hasArg(true).argName("separator")
 			.desc("a character (sequence) to use as separator for atoms in printed answer sets (default: "
 					+ SystemConfig.DEFAULT_ATOM_SEPARATOR + ")")
+			.build();
+	private static final Option OPT_IGNORE_DOMSPEC_HEURISTICS = Option.builder("ids").longOpt("ignoreDomSpecHeuristics")
+			.desc("ignore domain-specific heuristics defined via heuristic directives (default: " + SystemConfig.DEFAULT_IGNORE_DOMSPEC_HEURISTICS + ")")
 			.build();
 	//@formatter:on
 
@@ -186,6 +189,7 @@ public class CommandLineParser {
 		CommandLineParser.CLI_OPTS.addOption(CommandLineParser.OPT_GROUNDER_TOLERANCE_RULES);
 		CommandLineParser.CLI_OPTS.addOption(CommandLineParser.OPT_GROUNDER_ACCUMULATOR_ENABLED);
 		CommandLineParser.CLI_OPTS.addOption(CommandLineParser.OPT_OUTPUT_ATOM_SEPARATOR);
+		CommandLineParser.CLI_OPTS.addOption(CommandLineParser.OPT_IGNORE_DOMSPEC_HEURISTICS);
 	}
 
 	/*
@@ -242,6 +246,7 @@ public class CommandLineParser {
 		this.globalOptionHandlers.put(CommandLineParser.OPT_GROUNDER_TOLERANCE_RULES.getOpt(), this::handleGrounderToleranceRules);
 		this.globalOptionHandlers.put(CommandLineParser.OPT_GROUNDER_ACCUMULATOR_ENABLED.getOpt(), this::handleGrounderNoInstanceRemoval);
 		this.globalOptionHandlers.put(CommandLineParser.OPT_OUTPUT_ATOM_SEPARATOR.getOpt(), this::handleAtomSeparator);
+		this.globalOptionHandlers.put(CommandLineParser.OPT_IGNORE_DOMSPEC_HEURISTICS.getOpt(), this::handleIgnoreDomspecHeuristic);
 	}
 
 	private void initializeInputOptionHandlers() {
@@ -478,5 +483,9 @@ public class CommandLineParser {
 	private void handleAtomSeparator(Option opt, SystemConfig cfg) {
 		cfg.setAtomSeparator(StringEscapeUtils.unescapeJava(opt.getValue(SystemConfig.DEFAULT_ATOM_SEPARATOR)));
 	}
-	
+
+	private void handleIgnoreDomspecHeuristic(Option opt, SystemConfig cfg) {
+		cfg.setIgnoreDomspecHeuristics(true);
+	}
+
 }

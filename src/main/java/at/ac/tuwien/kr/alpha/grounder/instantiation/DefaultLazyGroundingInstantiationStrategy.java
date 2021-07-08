@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2020, the Alpha Team.
  * All rights reserved.
  *
@@ -25,21 +25,21 @@
  */
 package at.ac.tuwien.kr.alpha.grounder.instantiation;
 
-import java.util.LinkedHashSet;
-import java.util.Map;
-
 import at.ac.tuwien.kr.alpha.Util;
 import at.ac.tuwien.kr.alpha.common.Assignment;
 import at.ac.tuwien.kr.alpha.common.AtomStore;
-import at.ac.tuwien.kr.alpha.common.Predicate;
 import at.ac.tuwien.kr.alpha.common.atoms.Atom;
 import at.ac.tuwien.kr.alpha.common.atoms.Literal;
+import at.ac.tuwien.kr.alpha.common.program.Facts;
 import at.ac.tuwien.kr.alpha.grounder.IndexedInstanceStorage;
 import at.ac.tuwien.kr.alpha.grounder.Instance;
 import at.ac.tuwien.kr.alpha.grounder.NaiveGrounder;
 import at.ac.tuwien.kr.alpha.grounder.WorkingMemory;
 import at.ac.tuwien.kr.alpha.solver.Solver;
 import at.ac.tuwien.kr.alpha.solver.ThriceTruth;
+
+import java.util.LinkedHashSet;
+import java.util.Map;
 
 /**
  * Implementation of {@link AbstractLiteralInstantiationStrategy} designed for use in {@link NaiveGrounder}.
@@ -68,11 +68,10 @@ public class DefaultLazyGroundingInstantiationStrategy extends AbstractLiteralIn
 	private AtomStore atomStore;
 	private Assignment currentAssignment;
 	private LinkedHashSet<Atom> staleWorkingMemoryEntries;
-	private Map<Predicate, LinkedHashSet<Instance>> facts;
+	private Facts facts;
 	private boolean accumulatorEnabled;
 
-	public DefaultLazyGroundingInstantiationStrategy(WorkingMemory workingMemory, AtomStore atomStore,
-			Map<Predicate, LinkedHashSet<Instance>> facts, boolean accumulator) {
+	public DefaultLazyGroundingInstantiationStrategy(WorkingMemory workingMemory, AtomStore atomStore, Facts facts, boolean accumulator) {
 		this.workingMemory = workingMemory;
 		this.atomStore = atomStore;
 		this.facts = facts;
@@ -106,7 +105,7 @@ public class DefaultLazyGroundingInstantiationStrategy extends AbstractLiteralIn
 	//@formatter:on
 	@Override
 	protected AssignmentStatus getAssignmentStatusForAtom(Atom atom) {
-		if (this.currentAssignment == null || this.isFact(atom)) {
+		if (this.currentAssignment == null || facts.isFact(atom)) {
 			// currentAssignment == null is a legitimate case, grounder may be in bootstrap
 			// and will call bindNextAtom with null assignment in that case.
 			// Assumption: since the atom came from working memory and we must be in
@@ -139,14 +138,6 @@ public class DefaultLazyGroundingInstantiationStrategy extends AbstractLiteralIn
 			this.staleWorkingMemoryEntries.add(atom);
 		}
 		return retVal;
-	}
-
-	private boolean isFact(Atom atom) {
-		if (this.facts.get(atom.getPredicate()) == null) {
-			return false;
-		} else {
-			return this.facts.get(atom.getPredicate()).contains(Instance.fromAtom(atom));
-		}
 	}
 
 	@Override

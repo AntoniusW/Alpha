@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2016-2019, the Alpha Team.
+/*
+ * Copyright (c) 2016-2020, the Alpha Team.
  * All rights reserved.
  *
  * Additional changes made by Siemens.
@@ -29,8 +29,10 @@ package at.ac.tuwien.kr.alpha.grounder;
 
 import at.ac.tuwien.kr.alpha.common.AnswerSet;
 import at.ac.tuwien.kr.alpha.common.Assignment;
+import at.ac.tuwien.kr.alpha.common.AtomStore;
 import at.ac.tuwien.kr.alpha.common.IntIterator;
 import at.ac.tuwien.kr.alpha.common.NoGood;
+import at.ac.tuwien.kr.alpha.common.heuristics.HeuristicDirectiveValues;
 import at.ac.tuwien.kr.alpha.grounder.atoms.RuleAtom;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -40,6 +42,7 @@ import java.util.Set;
 public interface Grounder {
 	/**
 	 * Translates an answer-set represented by true atom IDs into its logical representation.
+	 *
 	 * @param trueAtoms
 	 * @return
 	 */
@@ -47,16 +50,18 @@ public interface Grounder {
 
 	/**
 	 * Applies lazy grounding and returns all newly derived (fully ground) NoGoods.
+	 *
 	 * @return a mapping of nogood IDs to NoGoods.
 	 */
 	Map<Integer, NoGood> getNoGoods(Assignment assignment);
 
 	/**
-	 * Return choice points and their enablers and disablers.
-	 * Must be preceeded by a call to getNoGoods().
+	 * Returns new choice points and their enablers and disablers.
+	 * Must be preceded by a call to {@link #getNoGoods(Assignment)}.
+	 *
 	 * @return a pair (choiceOn, choiceOff) of two maps from atomIds to atomIds,
-	 * choiceOn maps atoms (choice points) to their enabling atoms
-	 * and choiceOff maps atoms (choice points) to their disabling atoms.
+	 *         choiceOn maps atoms (choice points) to their enabling atoms
+	 *         and choiceOff maps atoms (choice points) to their disabling atoms.
 	 */
 	Pair<Map<Integer, Integer>, Map<Integer, Integer>> getChoiceAtoms();
 
@@ -67,16 +72,33 @@ public interface Grounder {
 	void updateAssignment(IntIterator it);
 
 	/**
+	 * Returns new heuristic atoms and their enablers and disablers.
+	 * Must be preceded by a call to {@link #getNoGoods(Assignment)}.
+	 * @see #getChoiceAtoms()
+	 */
+	Pair<Map<Integer, Integer[]>, Map<Integer, Integer[]>> getHeuristicAtoms();
+
+	/**
+	 * Returns a set of new mappings from heuristic atoms to {@link HeuristicDirectiveValues}.
+	 * Must be preceded by a call to {@link #getNoGoods(Assignment)}.
+	 */
+	Map<Integer, HeuristicDirectiveValues> getHeuristicValues();
+
+	/**
 	 * Returns a set of new mappings from head atoms to {@link RuleAtom}s deriving it.
 	 */
 	Map<Integer, Set<Integer>> getHeadsToBodies();
+
 
 	void forgetAssignment(int[] atomIds);
 
 	/**
 	 * Registers the given NoGood and returns the identifier of it.
+	 *
 	 * @param noGood
 	 * @return
 	 */
 	int register(NoGood noGood);
+
+	AtomStore getAtomStore();
 }

@@ -102,3 +102,4 @@ gradle-app.setting
 *.tokens
 /.dbeaver
 /Scripts
+/src/main/gen

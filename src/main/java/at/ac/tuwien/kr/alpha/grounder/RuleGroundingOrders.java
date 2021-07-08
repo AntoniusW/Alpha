@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2016-2019, the Alpha Team.
+/*
+ * Copyright (c) 2016-2020, the Alpha Team.
  * All rights reserved.
  *
  * Additional changes made by Siemens.
@@ -27,6 +27,11 @@
  */
 package at.ac.tuwien.kr.alpha.grounder;
 
+import at.ac.tuwien.kr.alpha.common.atoms.BasicAtom;
+import at.ac.tuwien.kr.alpha.common.atoms.Literal;
+import at.ac.tuwien.kr.alpha.common.rule.InternalRule;
+import at.ac.tuwien.kr.alpha.common.terms.VariableTerm;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -36,11 +41,6 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-
-import at.ac.tuwien.kr.alpha.common.atoms.BasicAtom;
-import at.ac.tuwien.kr.alpha.common.atoms.Literal;
-import at.ac.tuwien.kr.alpha.common.rule.InternalRule;
-import at.ac.tuwien.kr.alpha.common.terms.VariableTerm;
 
 /**
  * Provides the grounder with information on the order to ground the literals in the body of a rule.
@@ -166,8 +166,7 @@ public class RuleGroundingOrders {
 
 	private void computeGroundingOrder(Literal startingLiteral) {
 		Set<Literal> bodyLiterals = internalRule.getBody();
-		HashSet<VariableTerm> boundVariables = new HashSet<>();
-		boundVariables.addAll(startingLiteral.getBindingVariables());
+		HashSet<VariableTerm> boundVariables = new HashSet<>(startingLiteral.getBindingVariables());
 		LinkedHashSet<Literal> remainingLiterals = new LinkedHashSet<>(bodyLiterals);
 		remainingLiterals.remove(startingLiteral);
 		ArrayList<Literal> literalsOrder;

@@ -40,6 +40,7 @@ import at.ac.tuwien.kr.alpha.grounder.GrounderFactory;
 import at.ac.tuwien.kr.alpha.grounder.parser.ProgramParser;
 import at.ac.tuwien.kr.alpha.solver.heuristics.BranchingHeuristicFactory;
 import at.ac.tuwien.kr.alpha.solver.heuristics.BranchingHeuristicFactory.Heuristic;
+import at.ac.tuwien.kr.alpha.solver.heuristics.HeuristicsConfiguration;
 import at.ac.tuwien.kr.alpha.test.util.TestUtils;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
@@ -102,7 +103,7 @@ public abstract class AbstractSolverTests {
 	 * (which are not tuned for good performance as well as VSIDS).
 	 */
 	void ignoreNonDefaultDomainIndependentHeuristics() {
-		org.junit.Assume.assumeTrue(heuristic == BranchingHeuristicFactory.Heuristic.VSIDS);
+		org.junit.Assume.assumeTrue(heuristicsConfiguration.getHeuristic() == BranchingHeuristicFactory.Heuristic.VSIDS);
 	}
 
 	private static String[] getProperty(String subKey, String def) {
@@ -159,7 +160,7 @@ public abstract class AbstractSolverTests {
 								for (String dir : dirValues) {
 									for (String evaluateStratified : evaluateStratifiedValues) {
 										factories.add(new Object[] {
-												solver, grounder, store, BranchingHeuristicFactory.Heuristic.valueOf(heuristic), seed, checks, gtc, gtr,
+												solver, grounder, store, HeuristicsConfiguration.builder().setHeuristic(BranchingHeuristicFactory.Heuristic.valueOf(heuristic)).build(), seed, checks, gtc, gtr,
 												Boolean.valueOf(dir), Boolean.valueOf(evaluateStratified)
 										});
 									}
@@ -184,7 +185,7 @@ public abstract class AbstractSolverTests {
 	public String storeName;
 
 	@Parameter(3)
-	public BranchingHeuristicFactory.Heuristic heuristic;
+	public HeuristicsConfiguration heuristicsConfiguration;
 
 	@Parameter(4)
 	public long seed;
@@ -208,7 +209,7 @@ public abstract class AbstractSolverTests {
 	public boolean evaluateStratifiedPart;
 
 	protected Solver getInstance(AtomStore atomStore, Grounder grounder) {
-		return SolverFactory.getInstance(buildSystemConfig(), atomStore, grounder);
+		return SolverFactory.getInstance(buildSystemConfig(), atomStore, grounder, heuristicsConfiguration);
 	}
 
 	protected SystemConfig buildSystemConfig() {
@@ -216,7 +217,7 @@ public abstract class AbstractSolverTests {
 		config.setSolverName(solverName);
 		config.setNogoodStoreName(storeName);
 		config.setSeed(seed);
-		config.setBranchingHeuristic(heuristic);
+		config.setBranchingHeuristic(heuristicsConfiguration.getHeuristic());
 		config.setDebugInternalChecks(checks);
 		config.setDisableJustificationSearch(false);
 		config.setEvaluateStratifiedPart(evaluateStratifiedPart);
@@ -228,7 +229,7 @@ public abstract class AbstractSolverTests {
 		AtomStore atomStore = new AtomStoreImpl();
 		NormalProgram normalized = system.normalizeProgram(program);
 		InternalProgram preprocessed = system.performProgramPreprocessing(InternalProgram.fromNormalProgram(normalized));
-		return getInstance(atomStore, GrounderFactory.getInstance(grounderName, preprocessed, atomStore, true));
+		return getInstance(atomStore, GrounderFactory.getInstance(grounderName, preprocessed, atomStore, heuristicsConfiguration, true));
 	}
 
 	protected Solver getInstance(String program) {

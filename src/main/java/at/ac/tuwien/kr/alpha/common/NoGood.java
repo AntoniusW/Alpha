@@ -31,12 +31,12 @@ import at.ac.tuwien.kr.alpha.solver.Antecedent;
 
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.List;
 import java.util.stream.IntStream;
 
 import static at.ac.tuwien.kr.alpha.Util.oops;
-import static at.ac.tuwien.kr.alpha.common.Literals.*;
-import static at.ac.tuwien.kr.alpha.common.NoGoodInterface.Type.*;
+import static at.ac.tuwien.kr.alpha.common.Literals.isNegated;
+import static at.ac.tuwien.kr.alpha.common.Literals.positiveLiteral;
+import static at.ac.tuwien.kr.alpha.common.NoGoodInterface.Type.STATIC;
 
 public class NoGood implements NoGoodInterface, Comparable<NoGood> {
 	public static final int HEAD = 0;
@@ -54,7 +54,7 @@ public class NoGood implements NoGoodInterface, Comparable<NoGood> {
 		this(type, literals, false);
 	}
 	
-	private NoGood(Type type, int[] literals, boolean head) {
+	NoGood(Type type, int[] literals, boolean head) {
 		this.type = type;
 		this.head = head;
 		if (head && !isNegated(literals[0])) {
@@ -80,59 +80,6 @@ public class NoGood implements NoGoodInterface, Comparable<NoGood> {
 		this.literals = noGood.literals.clone();
 		this.head = noGood.head;
 		this.type = noGood.type;
-	}
-	
-	public static NoGood learnt(int... literals) {
-		return new NoGood(LEARNT, literals);
-	}
-
-	public static NoGood headFirst(int... literals) {
-		return headFirst(STATIC, literals);
-	}
-
-	public static NoGood headFirstInternal(int... literals) {
-		return headFirst(INTERNAL, literals);
-	}
-	
-	public static NoGood headFirst(Type type, int... literals) {
-		return new NoGood(type, literals, true);
-	}
-
-	public static NoGood fact(int literal) {
-		return headFirst(literal);
-	}
-
-	public static NoGood support(int headLiteral, int bodyRepresentingLiteral) {
-		return new NoGood(SUPPORT, headLiteral, negateLiteral(bodyRepresentingLiteral));
-	}
-
-	public static NoGood fromConstraint(List<Integer> posLiterals, List<Integer> negLiterals) {
-		return new NoGood(addPosNeg(new int[posLiterals.size() + negLiterals.size()], posLiterals, negLiterals, 0));
-	}
-	
-	public static NoGood fromBody(List<Integer> posLiterals, List<Integer> negLiterals, int bodyRepresentingLiteral) {
-		return fromBody(STATIC, posLiterals, negLiterals, bodyRepresentingLiteral);
-	}
-	
-	public static NoGood fromBodyInternal(List<Integer> posLiterals, List<Integer> negLiterals, int bodyRepresentingLiteral) {
-		return fromBody(INTERNAL, posLiterals, negLiterals, bodyRepresentingLiteral);
-	}
-
-	public static NoGood fromBody(Type type, List<Integer> posLiterals, List<Integer> negLiterals, int bodyRepresentingLiteral) {
-		int[] bodyLiterals = new int[posLiterals.size() + negLiterals.size() + 1];
-		bodyLiterals[0] = negateLiteral(bodyRepresentingLiteral);
-		return NoGood.headFirst(type, addPosNeg(bodyLiterals, posLiterals, negLiterals, 1));
-	}
-
-	private static int[] addPosNeg(int[] literals, List<Integer> posLiterals, List<Integer> negLiterals, int offset) {
-		int i = offset;
-		for (Integer literal : posLiterals) {
-			literals[i++] = literal;
-		}
-		for (Integer literal : negLiterals) {
-			literals[i++] = negateLiteral(literal);
-		}
-		return literals;
 	}
 
 	@Override
@@ -275,8 +222,7 @@ public class NoGood implements NoGoodInterface, Comparable<NoGood> {
 		sb.append("{ ");
 
 		for (int literal : literals) {
-			sb.append(isPositive(literal) ? "+" : "-");
-			sb.append(atomOf(literal));
+			sb.append(Literals.literalToString(literal));
 			sb.append(" ");
 		}
 

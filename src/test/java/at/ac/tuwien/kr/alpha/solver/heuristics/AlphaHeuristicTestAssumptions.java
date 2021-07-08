@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017-2018 Siemens AG
+ * Copyright (c) 2017-2019 Siemens AG
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -54,11 +54,10 @@ import static org.junit.Assert.assertTrue;
  * Tests assumptions made by {@link DependencyDrivenHeuristic} and other domain-independent heuristics.
  * Even if these test cases do not test {@link DependencyDrivenHeuristic} directly,
  * it will break if these test cases break.
- * 
- * Copyright (c) 2017-2018 Siemens AG
  *
  */
 public class AlphaHeuristicTestAssumptions {
+	private final HeuristicsConfiguration heuristicsConfiguration = new HeuristicsConfigurationBuilder().build();
 	private Grounder grounder;
 	private WritableAssignment assignment;
 	private TestableChoiceManager choiceManager;
@@ -77,7 +76,7 @@ public class AlphaHeuristicTestAssumptions {
 		NormalProgram normal = system.normalizeProgram(parsedProgram);
 		InternalProgram internalProgram = InternalProgram.fromNormalProgram(normal);
 		atomStore = new AtomStoreImpl();
-		grounder = new NaiveGrounder(internalProgram, atomStore, true);
+		grounder = new NaiveGrounder(internalProgram, atomStore, heuristicsConfiguration, true);
 		assignment = new TrailAssignment(atomStore);
 		choiceManager = new TestableChoiceManager(assignment, new NaiveNoGoodStore(assignment));
 	}

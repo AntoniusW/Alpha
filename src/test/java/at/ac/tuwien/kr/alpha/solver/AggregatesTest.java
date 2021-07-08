@@ -48,7 +48,7 @@ import at.ac.tuwien.kr.alpha.grounder.transformation.SumNormalization;
 public abstract class AggregatesTest extends AbstractSolverTests {
 
 	private static final String LS = System.lineSeparator();
-	
+
 	@Test
 	public void testAggregate_Count_Ground_Positive() throws IOException {
 		String program = "a." + LS
@@ -176,7 +176,7 @@ public abstract class AggregatesTest extends AbstractSolverTests {
 		AtomStore atomStore = new AtomStoreImpl();
 		NormalProgram normal = system.normalizeProgram(program);
 		InternalProgram preprocessed = InternalProgram.fromNormalProgram(normal);
-		return super.getInstance(atomStore, GrounderFactory.getInstance(grounderName, preprocessed, atomStore, p->true, new GrounderHeuristicsConfiguration(), true));
+		return super.getInstance(atomStore, GrounderFactory.getInstance(grounderName, preprocessed, atomStore, heuristicsConfiguration, p->true, new GrounderHeuristicsConfiguration(), true));
 	}
 	
 	protected abstract boolean useCountingGridNormalization();

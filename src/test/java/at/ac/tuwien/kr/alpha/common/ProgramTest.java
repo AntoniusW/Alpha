@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2017 Siemens AG
+/*
+ * Copyright (c) 2017-2020 Siemens AG
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -25,25 +25,60 @@
  */
 package at.ac.tuwien.kr.alpha.common;
 
-import static org.junit.Assert.assertEquals;
-
+import at.ac.tuwien.kr.alpha.common.program.InputProgram;
+import at.ac.tuwien.kr.alpha.common.terms.ConstantTerm;
+import at.ac.tuwien.kr.alpha.grounder.parser.ProgramParser;
 import org.junit.Test;
 
-import at.ac.tuwien.kr.alpha.common.program.InputProgram;
-import at.ac.tuwien.kr.alpha.grounder.parser.ProgramParser;
+import static org.junit.Assert.assertEquals;
 
 public class ProgramTest {
-	
+
+	public static final String LS = System.lineSeparator();
+
 	@Test
 	public void testToString() {
 		InputProgram parsedProgram = new ProgramParser().parse(
-				"p(a)." + System.lineSeparator() +
-					"q(X) :- p(X)." + System.lineSeparator() +
+				"#heuristic q(X) : p(X). [X@2]" + LS +
+					"p(a)." + LS +
+					"q(X) :- p(X)." + LS +
 					"p(b).");
 		assertEquals(
-				"p(a)." + System.lineSeparator() +
-					"p(b)." + System.lineSeparator() +
-					"q(X) :- p(X)." + System.lineSeparator(),
+				"p(a)." + LS +
+					"p(b)." + LS +
+					"q(X) :- p(X)." + LS +
+					"#heuristic T q(X) : TM p(X). [X@2]" + LS,
 				parsedProgram.toString());
+	}
+
+	@Test
+	public void testHeuristicDefaultWeight() {
+		InputProgram parsedProgram = new ProgramParser().parse(
+				"#heuristic q(X) : p(X).");
+		assertEquals(ConstantTerm.getInstance(0), ((HeuristicDirective)parsedProgram.getInlineDirectives().getDirectives().iterator().next()).getWeightAtLevel().getWeight());
+	}
+
+	@Test
+	public void testHeuristicDefaultLevel() {
+		InputProgram parsedProgram = new ProgramParser().parse(
+				"#heuristic q(X) : p(X).");
+		assertEquals(ConstantTerm.getInstance(0), ((HeuristicDirective)parsedProgram.getInlineDirectives().getDirectives().iterator().next()).getWeightAtLevel().getLevel());
+	}
+
+	@Test
+	public void testAccumulation() {
+		InputProgram program1 = new ProgramParser().parse(
+				"a." + LS +
+				"b :- a, not c." + LS +
+				"#heuristic b : not c. [1@2]"
+		);
+		InputProgram program2 = new ProgramParser().parse(
+			"c :- a, not b." + LS +
+				"#heuristic c : not b. [2@3]"
+		);
+		program1 = InputProgram.builder(program1).accumulate(program2).build();
+		assertEquals(1, program1.getFacts().size());
+		assertEquals(2, program1.getRules().size());
+		assertEquals(2, program1.getInlineDirectives().getDirectives().size());
 	}
 }

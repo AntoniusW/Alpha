@@ -229,3 +229,4 @@ public class NaiveNoGoodStore implements NoGoodStore {
 		return assignment.assign(headAtom, TRUE, noGood.asAntecedent());
 	}
 }
+

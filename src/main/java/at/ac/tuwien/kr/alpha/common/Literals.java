@@ -73,6 +73,10 @@ public final class Literals {
 		return negateLiteral(atomToLiteral(atom));
 	}
 
+	public static int signedAtomToLiteral(int signedAtom) {
+		return atomToLiteral(Math.abs(signedAtom), signedAtom > 0);
+	}
+
 	public static int positiveLiteral(int literal) {
 		return literal & ~0x1;
 	}

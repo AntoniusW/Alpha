@@ -28,6 +28,8 @@
 package at.ac.tuwien.kr.alpha.common.atoms;
 
 import at.ac.tuwien.kr.alpha.common.Predicate;
+import at.ac.tuwien.kr.alpha.common.Substitutable;
+import at.ac.tuwien.kr.alpha.common.terms.FunctionTerm;
 import at.ac.tuwien.kr.alpha.common.terms.Term;
 import at.ac.tuwien.kr.alpha.common.terms.VariableTerm;
 import at.ac.tuwien.kr.alpha.grounder.Substitution;
@@ -39,7 +41,7 @@ import java.util.Set;
 /**
  * An Atom is the common superclass of all representations of ASP atoms used by Alpha.
  */
-public abstract class Atom implements Comparable<Atom> {
+public abstract class Atom implements Comparable<Atom>, Substitutable<Atom> {
 
 	public abstract Predicate getPredicate();
 
@@ -90,6 +92,13 @@ public abstract class Atom implements Comparable<Atom> {
 	 * @return a literal that is positive iff the given parameter is true.
 	 */
 	public abstract Literal toLiteral(boolean positive);
+
+	/**
+	 * Converts this atom to a function term (which is needed if the atom is to be nested in another term)
+	 */
+	public FunctionTerm toFunctionTerm() {
+		throw new UnsupportedOperationException(this + " cannot be converted to a function term.");
+	}
 
 	public Atom renameVariables(String newVariablePrefix) {
 		Unifier renamingSubstitution = new Unifier();
