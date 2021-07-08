@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2017-2018, the Alpha Team.
+/*
+ * Copyright (c) 2017-2020, the Alpha Team.
  * All rights reserved.
  * 
  * Additional changes made by Siemens.
@@ -27,11 +27,19 @@
  */
 package at.ac.tuwien.kr.alpha.grounder;
 
-import static at.ac.tuwien.kr.alpha.common.Literals.atomOf;
-import static at.ac.tuwien.kr.alpha.common.Literals.atomToLiteral;
-import static at.ac.tuwien.kr.alpha.common.Literals.negateLiteral;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
+import at.ac.tuwien.kr.alpha.common.AtomStore;
+import at.ac.tuwien.kr.alpha.common.NegativeChoicePredicate;
+import at.ac.tuwien.kr.alpha.common.NoGood;
+import at.ac.tuwien.kr.alpha.common.Predicate;
+import at.ac.tuwien.kr.alpha.common.atoms.Atom;
+import at.ac.tuwien.kr.alpha.common.atoms.BasicAtom;
+import at.ac.tuwien.kr.alpha.common.atoms.FixedInterpretationLiteral;
+import at.ac.tuwien.kr.alpha.common.atoms.Literal;
+import at.ac.tuwien.kr.alpha.common.program.InternalProgram;
+import at.ac.tuwien.kr.alpha.common.rule.InternalRule;
+import at.ac.tuwien.kr.alpha.common.terms.Term;
+import at.ac.tuwien.kr.alpha.grounder.atoms.EnumerationAtom;
+import at.ac.tuwien.kr.alpha.grounder.atoms.RuleAtom;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -40,16 +48,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import at.ac.tuwien.kr.alpha.common.AtomStore;
-import at.ac.tuwien.kr.alpha.common.NoGood;
-import at.ac.tuwien.kr.alpha.common.Predicate;
-import at.ac.tuwien.kr.alpha.common.atoms.Atom;
-import at.ac.tuwien.kr.alpha.common.atoms.FixedInterpretationLiteral;
-import at.ac.tuwien.kr.alpha.common.atoms.Literal;
-import at.ac.tuwien.kr.alpha.common.program.InternalProgram;
-import at.ac.tuwien.kr.alpha.common.rule.InternalRule;
-import at.ac.tuwien.kr.alpha.grounder.atoms.EnumerationAtom;
-import at.ac.tuwien.kr.alpha.grounder.atoms.RuleAtom;
+import static at.ac.tuwien.kr.alpha.common.Literals.atomOf;
+import static at.ac.tuwien.kr.alpha.common.Literals.atomToLiteral;
+import static at.ac.tuwien.kr.alpha.common.Literals.negateLiteral;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 
 /**
  * Class to generate ground NoGoods out of non-ground rules and grounding substitutions.
@@ -72,7 +75,7 @@ public class NoGoodGenerator {
 
 	/**
 	 * Generates all NoGoods resulting from a non-ground rule and a variable substitution.
-	 * 
+	 *
 	 * @param nonGroundRule
 	 *          the non-ground rule.
 	 * @param substitution
@@ -97,7 +100,7 @@ public class NoGoodGenerator {
 
 		final Atom groundHeadAtom = nonGroundRule.getHeadAtom().substitute(substitution);
 		final int headId = atomStore.putIfAbsent(groundHeadAtom);
-		
+
 		// Prepare atom representing the rule body.
 		final RuleAtom bodyAtom = new RuleAtom(nonGroundRule, substitution);
 
@@ -113,7 +116,7 @@ public class NoGoodGenerator {
 		final int headLiteral = atomToLiteral(atomStore.putIfAbsent(nonGroundRule.getHeadAtom().substitute(substitution)));
 
 		choiceRecorder.addHeadToBody(headId, atomOf(bodyRepresentingLiteral));
-		
+
 		// Create a nogood for the head.
 		result.add(NoGood.headFirst(negateLiteral(headLiteral), bodyRepresentingLiteral));
 
@@ -133,6 +136,16 @@ public class NoGoodGenerator {
 		// If the body of the rule contains negation, add choices.
 		if (!negLiterals.isEmpty()) {
 			result.addAll(choiceRecorder.generateChoiceNoGoods(posLiterals, negLiterals, bodyRepresentingLiteral));
+		}
+
+		// If this is a choice rule, add nogood that prevents both positive and negative head to be true at the same time.
+		if (groundHeadAtom.getPredicate() instanceof NegativeChoicePredicate) {
+			// TODO: clean up
+			// TODO: should we find the original atom instead of constructing a new one?
+			final List<Term> terms = groundHeadAtom.getTerms().subList(1, groundHeadAtom.getTerms().size());
+			BasicAtom complement = new BasicAtom(((NegativeChoicePredicate) groundHeadAtom.getPredicate()).getOriginalChoicePredicate(), terms);
+			final int complementId = atomStore.putIfAbsent(complement);
+			result.add(new NoGood(atomToLiteral(complementId), headLiteral));
 		}
 
 		return result;

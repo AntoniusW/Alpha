@@ -27,6 +27,7 @@
  */
 package at.ac.tuwien.kr.alpha.grounder.transformation;
 
+import at.ac.tuwien.kr.alpha.common.NegativeChoicePredicate;
 import at.ac.tuwien.kr.alpha.common.Predicate;
 import at.ac.tuwien.kr.alpha.common.atoms.Atom;
 import at.ac.tuwien.kr.alpha.common.atoms.BasicAtom;
@@ -48,7 +49,6 @@ import java.util.List;
  * Copyright (c) 2017-2020, the Alpha Team.
  */
 public class ChoiceHeadToNormal extends ProgramTransformation<InputProgram, InputProgram> {
-	private final static String PREDICATE_NEGATION_PREFIX = "_n";
 
 	@Override
 	public InputProgram apply(InputProgram inputProgram) {
@@ -91,7 +91,7 @@ public class ChoiceHeadToNormal extends ProgramTransformation<InputProgram, Inpu
 				// Construct head atom for the choice.
 				Predicate headPredicate = head.getPredicate();
 
-				Predicate negPredicate = Predicate.getInstance(PREDICATE_NEGATION_PREFIX + headPredicate.getName(), headPredicate.getArity() + 1, true);
+				Predicate negPredicate = NegativeChoicePredicate.getInstance(headPredicate);
 				List<Term> headTerms = new ArrayList<>(head.getTerms());
 				headTerms.add(0, ConstantTerm.getInstance("1")); // FIXME: when introducing classical negation, this is 1 for classical positive atoms and 0 for
 																	// classical negative atoms.
