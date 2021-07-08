@@ -30,8 +30,9 @@ package at.ac.tuwien.kr.alpha.grounder.transformation;
 import at.ac.tuwien.kr.alpha.common.atoms.Atom;
 import at.ac.tuwien.kr.alpha.common.atoms.ComparisonLiteral;
 import at.ac.tuwien.kr.alpha.common.atoms.Literal;
-import at.ac.tuwien.kr.alpha.common.program.NormalProgram;
-import at.ac.tuwien.kr.alpha.common.rule.NormalRule;
+import at.ac.tuwien.kr.alpha.common.program.InputProgram;
+import at.ac.tuwien.kr.alpha.common.rule.BasicRule;
+import at.ac.tuwien.kr.alpha.common.rule.head.DisjunctiveHead;
 import at.ac.tuwien.kr.alpha.common.rule.head.NormalHead;
 import at.ac.tuwien.kr.alpha.common.terms.Term;
 import at.ac.tuwien.kr.alpha.common.terms.VariableTerm;
@@ -50,20 +51,20 @@ import java.util.Map;
 /**
  * Removes variable equalities from rules by replacing one variable with the other.
  *
- * Copyright (c) 2017-2020, the Alpha Team.
+ * Copyright (c) 2017-2021, the Alpha Team.
  */
-public class VariableEqualityRemoval extends ProgramTransformation<NormalProgram, NormalProgram> {
+public class VariableEqualityRemoval extends ProgramTransformation<InputProgram, InputProgram> {
 
 	@Override
-	public NormalProgram apply(NormalProgram inputProgram) {
-		List<NormalRule> rewrittenRules = new ArrayList<>();
-		for (NormalRule rule : inputProgram.getRules()) {
+	public InputProgram apply(InputProgram inputProgram) {
+		List<BasicRule> rewrittenRules = new ArrayList<>();
+		for (BasicRule rule : inputProgram.getRules()) {
 			rewrittenRules.add(findAndReplaceVariableEquality(rule));
 		}
-		return new NormalProgram(rewrittenRules, inputProgram.getFacts(), inputProgram.getInlineDirectives());
+		return new InputProgram(rewrittenRules, inputProgram.getFacts(), inputProgram.getInlineDirectives());
 	}
 
-	private NormalRule findAndReplaceVariableEquality(NormalRule rule) {
+	private BasicRule findAndReplaceVariableEquality(BasicRule rule) {
 		// Collect all equal variables.
 		HashMap<VariableTerm, HashSet<VariableTerm>> variableToEqualVariables = new LinkedHashMap<>();
 		HashSet<Literal> equalitiesToRemove = new HashSet<>();
@@ -108,7 +109,10 @@ public class VariableEqualityRemoval extends ProgramTransformation<NormalProgram
 		}
 
 		List<Literal> rewrittenBody = new ArrayList<>(rule.getBody());
-		NormalHead rewrittenHead = rule.isConstraint() ? null : new NormalHead(rule.getHeadAtom());
+		if (!rule.isConstraint() && rule.getHead() instanceof DisjunctiveHead) {
+			throw new UnsupportedOperationException("VariableEqualityRemoval cannot be applied to rule with DisjunctiveHead, yet.");
+		}
+		NormalHead rewrittenHead = rule.isConstraint() ? null : new NormalHead(((NormalHead)rule.getHead()).getAtom());
 
 		// Use substitution for actual replacement.
 		Unifier replacementSubstitution = new Unifier();
@@ -141,6 +145,6 @@ public class VariableEqualityRemoval extends ProgramTransformation<NormalProgram
 				headAtom.getTerms().set(i, replaced);
 			}
 		}
-		return new NormalRule(rewrittenHead, rewrittenBody);
+		return new BasicRule(rewrittenHead, rewrittenBody);
 	}
 }

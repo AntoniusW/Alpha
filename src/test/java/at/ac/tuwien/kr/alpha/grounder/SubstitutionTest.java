@@ -27,6 +27,12 @@
  */
 package at.ac.tuwien.kr.alpha.grounder;
 
+import static org.junit.Assert.assertEquals;
+
+import org.junit.Test;
+
+import java.util.Arrays;
+
 import at.ac.tuwien.kr.alpha.common.Predicate;
 import at.ac.tuwien.kr.alpha.common.atoms.BasicAtom;
 import at.ac.tuwien.kr.alpha.common.atoms.BasicLiteral;
@@ -41,11 +47,6 @@ import at.ac.tuwien.kr.alpha.common.terms.VariableTerm;
 import at.ac.tuwien.kr.alpha.grounder.atoms.RuleAtom;
 import at.ac.tuwien.kr.alpha.grounder.parser.ProgramParser;
 import at.ac.tuwien.kr.alpha.test.util.SubstitutionTestUtil;
-import org.junit.Test;
-
-import java.util.Arrays;
-
-import static org.junit.Assert.assertEquals;
 
 public class SubstitutionTest {
 	private static final ProgramParser PARSER = new ProgramParser();
@@ -82,7 +83,7 @@ public class SubstitutionTest {
 		FunctionTerm groundFunctionTerm = FunctionTerm.getInstance("f", B, C);
 		Instance qfBC = new Instance(groundFunctionTerm);
 		Term nongroundFunctionTerm = FunctionTerm.getInstance("f", B, X);
-		BasicAtom qfBX = new BasicAtom(Predicate.getInstance("q", 2), nongroundFunctionTerm);
+		BasicAtom qfBX = new BasicAtom(Predicate.getInstance("q", 1), nongroundFunctionTerm);
 
 		Substitution substitution1 = Substitution.specializeSubstitution(qfBX, qfBC, substitution);
 

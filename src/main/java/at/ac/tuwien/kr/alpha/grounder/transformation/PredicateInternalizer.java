@@ -1,5 +1,8 @@
 package at.ac.tuwien.kr.alpha.grounder.transformation;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import at.ac.tuwien.kr.alpha.common.Predicate;
 import at.ac.tuwien.kr.alpha.common.atoms.Atom;
 import at.ac.tuwien.kr.alpha.common.atoms.BasicAtom;
@@ -10,9 +13,6 @@ import at.ac.tuwien.kr.alpha.common.rule.BasicRule;
 import at.ac.tuwien.kr.alpha.common.rule.head.Head;
 import at.ac.tuwien.kr.alpha.common.rule.head.NormalHead;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  *
  * Rewrites all predicates of a given Program such that they are internal and hence hidden from answer sets.
@@ -21,31 +21,45 @@ import java.util.List;
  */
 public class PredicateInternalizer {
 
-	static InputProgram makePredicatesInternal(InputProgram program) {
+
+	public static InputProgram makePrefixedPredicatesInternal(InputProgram program, String prefix) {
 		InputProgram.Builder prgBuilder = InputProgram.builder();
 		for (Atom atom : program.getFacts()) {
-			prgBuilder.addFact(PredicateInternalizer.makePredicateInternal(atom));
+			if (atom.getPredicate().getName().startsWith(prefix)) {
+				prgBuilder.addFact(PredicateInternalizer.makePredicateInternal(atom));
+			} else {
+				prgBuilder.addFact(atom);
+			}
 		}
 		for (BasicRule rule : program.getRules()) {
-			prgBuilder.addRule(PredicateInternalizer.makePredicateInternal(rule));
+			prgBuilder.addRule(PredicateInternalizer.makePrefixedPredicatesInternal(rule, prefix));
 		}
 		prgBuilder.addInlineDirectives(program.getInlineDirectives());
 		return prgBuilder.build();
 	}
 
-	private static BasicRule makePredicateInternal(BasicRule rule) {
+	public static BasicRule makePrefixedPredicatesInternal(BasicRule rule, String prefix) {
 		Head newHead = null;
 		if (rule.getHead() != null) {
 			if (!(rule.getHead() instanceof NormalHead)) {
 				throw new UnsupportedOperationException("Cannot make predicates in rules internal whose head is not normal.");
 			}
-			newHead = new NormalHead(makePredicateInternal(((NormalHead) rule.getHead()).getAtom()));
+			NormalHead head = (NormalHead) rule.getHead();
+			if (head.getAtom().getPredicate().getName().startsWith(prefix)) {
+				newHead = new NormalHead(makePredicateInternal(head.getAtom()));
+			} else {
+				newHead = head;
+			}
 		}
 		List<Literal> newBody = new ArrayList<>();
 		for (Literal bodyElement : rule.getBody()) {
 			// Only rewrite BasicAtoms.
 			if (bodyElement instanceof BasicLiteral) {
-				newBody.add(makePredicateInternal(bodyElement.getAtom()).toLiteral());
+				if (bodyElement.getAtom().getPredicate().getName().startsWith(prefix)) {
+					newBody.add(makePredicateInternal(bodyElement.getAtom()).toLiteral(!bodyElement.isNegated()));
+				} else {
+					newBody.add(bodyElement);
+				}
 			} else {
 				// Keep other body element as is.
 				newBody.add(bodyElement);

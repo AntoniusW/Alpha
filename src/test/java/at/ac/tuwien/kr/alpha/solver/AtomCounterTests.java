@@ -110,7 +110,7 @@ public class AtomCounterTests {
 		final ConstantTerm<Integer> c3 = ConstantTerm.getInstance(3);
 		List<Term> basicTerms = Arrays.asList(c1, c2, c3);
 		AggregateAtom.AggregateElement aggregateElement = new AggregateAtom.AggregateElement(basicTerms, Collections.singletonList(new BasicAtom(Predicate.getInstance("p", 3), c1, c2, c3).toLiteral()));
-		atomStore.putIfAbsent(new AggregateAtom(ComparisonOperator.LE, c1, null, null, AggregateAtom.AGGREGATEFUNCTION.COUNT, Collections.singletonList(aggregateElement)));
+		atomStore.putIfAbsent(new AggregateAtom(ComparisonOperator.LE, c1, null, null, AggregateAtom.AggregateFunctionSymbol.COUNT, Collections.singletonList(aggregateElement)));
 	}
 
 	private void createChoiceAtom() {

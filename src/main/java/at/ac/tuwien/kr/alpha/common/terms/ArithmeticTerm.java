@@ -27,13 +27,14 @@
  */
 package at.ac.tuwien.kr.alpha.common.terms;
 
-import at.ac.tuwien.kr.alpha.common.Interner;
-import at.ac.tuwien.kr.alpha.grounder.Substitution;
 import com.google.common.math.IntMath;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+
+import at.ac.tuwien.kr.alpha.common.Interner;
+import at.ac.tuwien.kr.alpha.grounder.Substitution;
 
 /**
  * This class represents an arithmetic expression occurring as a term.
@@ -58,18 +59,6 @@ public class ArithmeticTerm extends Term {
 			return ConstantTerm.getInstance(result);
 		}
 		return INTERNER.intern(new ArithmeticTerm(left, arithmeticOperator, right));
-	}
-
-	public Term getLeft() {
-		return left;
-	}
-
-	public Term getRight() {
-		return right;
-	}
-
-	public ArithmeticOperator getArithmeticOperator() {
-		return arithmeticOperator;
 	}
 
 	@Override
@@ -111,13 +100,14 @@ public class ArithmeticTerm extends Term {
 
 	private static Integer evaluateGroundTermHelper(Term term) {
 		if (term instanceof ConstantTerm
-			&& ((ConstantTerm<?>) term).getObject() instanceof Integer) {
+				&& ((ConstantTerm<?>) term).getObject() instanceof Integer) {
 			// Extract integer from the constant.
 			return (Integer) ((ConstantTerm<?>) term).getObject();
 		} else if (term instanceof ArithmeticTerm) {
 			return ((ArithmeticTerm) term).evaluateExpression();
 		} else {
-			// ASP Core 2 standard allows non-integer terms in arithmetic expressions, result is to simply ignore the ground instance.
+			// ASP Core 2 standard allows non-integer terms in arithmetic expressions, result is to simply ignore the ground
+			// instance.
 			return null;
 		}
 	}
@@ -161,6 +151,18 @@ public class ArithmeticTerm extends Term {
 		return 31 * (31 * left.hashCode() + arithmeticOperator.hashCode()) + right.hashCode();
 	}
 
+	public Term getLeft() {
+		return left;
+	}
+
+	public ArithmeticOperator getArithmeticOperator() {
+		return arithmeticOperator;
+	}
+
+	public Term getRight() {
+		return right;
+	}
+
 	public enum ArithmeticOperator {
 		PLUS("+"),
 		MINUS("-"),
@@ -169,7 +171,6 @@ public class ArithmeticTerm extends Term {
 		POWER("**"),
 		MODULO("\\"),
 		BITXOR("^");
-
 
 		private String asString;
 
@@ -211,7 +212,6 @@ public class ArithmeticTerm extends Term {
 			super(term, null, null);
 		}
 
-
 		public static Term getInstance(Term term) {
 			// Evaluate ground arithmetic terms immediately and return result.
 			if (term.isGround()) {
@@ -245,7 +245,7 @@ public class ArithmeticTerm extends Term {
 		public Term renameVariables(String renamePrefix) {
 			return getInstance(left.renameVariables(renamePrefix));
 		}
-		
+
 		@Override
 		public Term normalizeVariables(String renamePrefix, RenameCounter counter) {
 			Term normalizedLeft = left.normalizeVariables(renamePrefix, counter);
@@ -276,4 +276,5 @@ public class ArithmeticTerm extends Term {
 			return 31 * left.hashCode();
 		}
 	}
+
 }

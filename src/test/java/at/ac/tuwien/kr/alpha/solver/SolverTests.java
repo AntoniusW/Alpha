@@ -44,7 +44,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 
-import at.ac.tuwien.kr.alpha.AnswerSetsParser;
 import at.ac.tuwien.kr.alpha.api.Alpha;
 import at.ac.tuwien.kr.alpha.common.AnswerSet;
 import at.ac.tuwien.kr.alpha.common.AnswerSetBuilder;
@@ -61,6 +60,7 @@ import at.ac.tuwien.kr.alpha.grounder.DummyGrounder;
 import at.ac.tuwien.kr.alpha.grounder.parser.InlineDirectives;
 import at.ac.tuwien.kr.alpha.grounder.parser.ProgramParser;
 import at.ac.tuwien.kr.alpha.solver.heuristics.BranchingHeuristicFactory;
+import at.ac.tuwien.kr.alpha.test.util.AnswerSetsParser;
 import junit.framework.TestCase;
 
 public class SolverTests extends AbstractSolverTests {

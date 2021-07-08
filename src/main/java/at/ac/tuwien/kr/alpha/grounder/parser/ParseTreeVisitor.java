@@ -329,7 +329,7 @@ public class ParseTreeVisitor extends ASPCore2BaseVisitor<Object> {
 			ut = (Term) visit(ctx.ut);
 			uop = visitBinop(ctx.uop);
 		}
-		AggregateAtom.AGGREGATEFUNCTION aggregateFunction = visitAggregate_function(ctx.aggregate_function());
+		AggregateAtom.AggregateFunctionSymbol aggregateFunction = visitAggregate_function(ctx.aggregate_function());
 		List<AggregateAtom.AggregateElement> aggregateElements = visitAggregate_elements(ctx.aggregate_elements());
 		return new AggregateAtom(lop, lt, uop, ut, aggregateFunction, aggregateElements).toLiteral(isPositive);
 	}
@@ -403,16 +403,16 @@ public class ParseTreeVisitor extends ASPCore2BaseVisitor<Object> {
 	}
 
 	@Override
-	public AggregateAtom.AGGREGATEFUNCTION visitAggregate_function(ASPCore2Parser.Aggregate_functionContext ctx) {
+	public AggregateAtom.AggregateFunctionSymbol visitAggregate_function(ASPCore2Parser.Aggregate_functionContext ctx) {
 		// aggregate_function : AGGREGATE_COUNT | AGGREGATE_MAX | AGGREGATE_MIN | AGGREGATE_SUM;
 		if (ctx.AGGREGATE_COUNT() != null) {
-			return AggregateAtom.AGGREGATEFUNCTION.COUNT;
+			return AggregateAtom.AggregateFunctionSymbol.COUNT;
 		} else if (ctx.AGGREGATE_MAX() != null) {
-			return AggregateAtom.AGGREGATEFUNCTION.MAX;
+			return AggregateAtom.AggregateFunctionSymbol.MAX;
 		} else if (ctx.AGGREGATE_MIN() != null) {
-			return AggregateAtom.AGGREGATEFUNCTION.MIN;
+			return AggregateAtom.AggregateFunctionSymbol.MIN;
 		} else if (ctx.AGGREGATE_SUM() != null) {
-			return AggregateAtom.AGGREGATEFUNCTION.SUM;
+			return AggregateAtom.AggregateFunctionSymbol.SUM;
 		} else {
 			throw notSupported(ctx);
 		}

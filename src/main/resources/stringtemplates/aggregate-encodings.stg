@@ -1,0 +1,218 @@
+delimiters "$", "$"
+/**
+ * The core (i.e. input-independent) part of an ASP encoding for an aggregate literal of the form "X = #count{...}".
+ * Arguments:
+ * - id: a unique identifier of the aggregate literal to encode.
+ * - result_predicate: the name of the predicate that is used to replace the rewritten aggregate in the input program.
+ *   Must be unique to each encoded literal (ideally contains the aggregate's id).
+ * - element_tuple: The predicate name used for tuples over which this encoding aggregates over.
+ *   Must be unique to each encoded literal (ideally contains the aggregate's id).
+ * - bound: The predicate name used for the "bound" in the encoding.
+ *   Note that in this case the value of the bound is not of interest, and it is purely used as a fallback in order to be able
+ *   to derive a count of zero when counting an empty set and no other rule can fire.
+ *
+ * Callers must ensure that rules deriving element tuples and bounds used by this encoding are in place.
+ */
+cnt_eq (id, result_predicate, element_tuple, bound )::=<<
+	#enumeration_predicate_is enum.
+
+	$! Every ordinal of a counted value is a candidate value for the final count !$
+	$! Since we need to check every value from 1 up to the maximum index, use intervals here !$
+	$id$_cnt_candidate(ARGS, ORD) :- $element_tuple$(ARGS, TPL), enum(ARGS, TPL, ORD).
+	$id$_cnt_candidate(ARGS, Nm1) :- $id$_cnt_candidate(ARGS, N), N > 1, Nm1 = N - 1.
+
+	$! Input Numbers - Every ordinal for which the mapped atom is actually true is an input number to the sorting grid !$
+	$id$_sorting_network_input_number(ARGS, NUM) :- $element_tuple$(ARGS, TPL), enum(ARGS, TPL, NUM).
+
+	$! Every Candidate is a bound for the sorting network !$
+	$bound$(ARGS, VAL) :- $id$_cnt_candidate(ARGS, VAL), VAL != 0.
+	$! Special case - derive that 0 is a candidate from the "default fallback" bound. Need to do this in order to get the ARGS tuple for the candidate !$
+	$id$_cnt_candidate(ARGS, 0) :- $bound$(ARGS, 0).
+
+	$! sorting grid result !$
+	$id$_sorting_grid_result(ARGS, K) :- $bound$(ARGS, K), K<=0.
+	$id$_sorting_grid_result(ARGS, K) :- $bound$(ARGS, K), $id$_sorting_network_v(ARGS, K, D), $id$_sorting_network_done(N, D), K<=N.
+
+	$result_predicate$(ARGS, CNT) :- $id$_cnt_candidate(ARGS, CNT), $id$_sorting_grid_result(ARGS, CNT), CNT1 = CNT + 1, not $id$_sorting_grid_result(ARGS, CNT1).
+
+	$! include sorting network core encoding !$
+	$sorting_grid_core(id=id)$
+>>
+
+/**
+ * The core (i.e. input-independent) part of a sorting-network based ASP encoding for an aggregate literal of the form "X <= #count{...}".
+ * For an aggregate literal of form "K <= #count{ N : p(N); N : q(N)}", an encoding needs to provide rules that map each aggregate element
+ * to ground instances of a candidate predicate "$candidate$/2" whose first argument is a funtion term wrapping global variables of the original aggregate literal.
+ * E.g. "sorting_network_candidate(ARGS, IDX) :- element_tuple(ARGS, tuple(X)), _Enumeration(ARGS, tuple(X), I).",
+ * where "element_tuple" could be defined as "element_tuple(ARGS, tuple(X)) :- p(X)".
+ * Furthermore, code using this encoding needs to provide a rules deriving a "bound" predicate that works as an upper bound for the sorting network,
+ * i.e. binds the variable that is compared with the aggregate. When rewriting rules, the body of the bound rule should hold all literals binding
+ * any variables on which the original aggregate literal depends, e.g. "bound(ARGS, K) :- atom_binding_k(K), something_binding_args(ARGS)."
+ *
+ * The rules deriving the aggregate result predicate in this encoding fire if and only if the original aggregate literal is true.
+ */
+cnt_le_sorting_grid (id, result_predicate, element_tuple, bound )::=<<
+	#enumeration_predicate_is enum.
+
+	$! aggregate result rule !$
+	$result_predicate$(ARGS, K) :- $bound$(ARGS, K), K<=0.
+	$result_predicate$(ARGS, K) :- $bound$(ARGS, K), $id$_sorting_network_v(ARGS, K, D), $id$_sorting_network_done(N, D), K<=N.
+
+	$! Sorting network input !$
+	$id$_sorting_network_input_number(ARGS, IDX) :- $element_tuple$(ARGS, TPL), enum(ARGS, TPL, IDX).
+
+	$! include sorting network core encoding !$
+	$sorting_grid_core(id=id)$
+>>
+
+sorting_grid_core (id)::=<<
+	$! Sorting network encoding !$
+	$id$_sorting_network_span(ARGS, I) :- $id$_sorting_network_input_number(ARGS, I).
+	$id$_sorting_network_span(ARGS, Im1) :- $id$_sorting_network_span(ARGS, I), 1<I, Im1 = I-1.
+
+	$id$_sorting_network_v(ARGS, I, D) :- $id$_sorting_network_input_number(ARGS, I), D=0.
+
+	$id$_sorting_network_v(ARGS, I, D) :-
+		$id$_sorting_network_v(ARGS, I, D1), D1=D-1, $id$_sorting_network_comp(I, _, D),
+		$id$_sorting_network_dh(ARGS, D).
+
+	$id$_sorting_network_v(ARGS, I, D) :-
+		$id$_sorting_network_v(ARGS, J, D1), D1=D-1,
+		$id$_sorting_network_comp(I, J, D), $id$_sorting_network_dh(ARGS, D).
+
+	$id$_sorting_network_v(ARGS, J, D) :-
+		$id$_sorting_network_v(ARGS, I, D1), D1=D-1,
+		$id$_sorting_network_comp(I, J, D), $id$_sorting_network_dh(ARGS, D),
+		$id$_sorting_network_v(ARGS, J, D1).
+
+	$id$_sorting_network_v(ARGS, I, D) :-
+	 	$id$_sorting_network_v(ARGS, I, D1), D1=D-1,
+	 	$id$_sorting_network_pass(I, D), $id$_sorting_network_dh(ARGS, D).
+
+	$id$_sorting_network_span_project(I) :- $id$_sorting_network_span(_, I).
+
+	$id$_sorting_network_part(P) :- $id$_sorting_network_span_project(I), Im1=I-1, $id$_sorting_network_log2(Im1, P1), P=P1+1.
+
+	$id$_sorting_network_lvl(1,1,1) :- $id$_sorting_network_part(1).
+	$id$_sorting_network_lvl(L,P1,DL) :-
+		$id$_sorting_network_lvl(P,P,D), P1=P+1, $id$_sorting_network_part(P1), L=1..P1, DL=D+L.
+
+	$id$_sorting_network_comp(I,J,D) :-
+		$id$_sorting_network_lvl(1,P,D), $id$_sorting_network_span_project(I), I<J, J=((I-1)^(2**(P-1)))+1.
+
+	$id$_sorting_network_comp(I,J,D) :-
+		$id$_sorting_network_lvl(L,P,D), $id$_sorting_network_span_project(I),
+		J=I+S, 1<L, N!=0, N!=B-1, N \ 2 = 1, N = (I - 1) / S - ((I - 1) / S / B) * B, S = 2 ** (P - L), B = 2 ** L.
+
+	$id$_sorting_network_pass(I,D) :-
+		$id$_sorting_network_lvl(L,P,D), $id$_sorting_network_span_project(I),
+		1<L, N=0, N = (I - 1) / S - ((I - 1) / S / B) * B, S = 2 ** (P - L), B = 2 ** L.
+
+	$id$_sorting_network_pass(I,D) :-
+		$id$_sorting_network_lvl(L,P,D), $id$_sorting_network_span_project(I),
+		1<L, N=B-1, N = (I - 1) / S - ((I - 1) / S / B) * B, S = 2 ** (P - L), B = 2 ** L.
+
+	$id$_sorting_network_dh(ARGS, D) :-
+		$id$_sorting_network_span(ARGS, N1), N1=N+1, $id$_sorting_network_done(N,_), N2=N*2, $id$_sorting_network_done(N2,D).
+	$id$_sorting_network_dh(ARGS, Dm1) :- Dm1 = D - 1, D > 1, $id$_sorting_network_dh(ARGS, D).
+
+	$id$_sorting_network_done(1,0).
+	$id$_sorting_network_done(N,D) :- $id$_sorting_network_log2(N,P), $id$_sorting_network_lvl(P,P,D).
+
+	$id$_sorting_network_log2(Ip2, I) :- Ip2 = 2 ** I, I = 0..30.
+>>
+
+
+/**
+ * The core (i.e. input-independent) part of an ASP encoding for an aggregate literal of the form "X <= #count{...}".
+ * Arguments:
+ * - id: a unique identifier of the aggregate literal to encode.
+ * - result_predicate: the name of the predicate that is used to replace the rewritten aggregate in the input program.
+ *   Must be unique to each encoded literal (ideally contains the aggregate's id).
+ * - element_tuple: The predicate name used for tuples over which this encoding aggregates over.
+ *   Must be unique to each encoded literal (ideally contains the aggregate's id).
+ * - bound: The predicate name used for the "bound", i.e. the value that is tested for being a lower bound of the aggregate.
+ *
+ * Callers must ensure that rules deriving element tuples and bounds used by this encoding are in place.
+ **/
+cnt_le_counting_grid (id, result_predicate, element_tuple, bound )::=<<
+	#enumeration_predicate_is enum.
+
+	$! Sorting network input !$
+	$id$_sorting_network_input_number(ARGS, IDX) :- $element_tuple$(ARGS, TPL), enum(ARGS, TPL, IDX).
+
+	$!Fallback rule - even if no input number exists, the count is still zero!$
+	$id$_sum(ARGS, 0, 0)    :- $bound$(ARGS, _).
+
+	$id$_span(ARGS, I1) :- I1 = I-1, $id$_sorting_network_input_number(ARGS, I).
+	$id$_span(ARGS, Im1) :- Im1 = I-1, I > 1, $id$_span(ARGS, I).
+	$id$_sum(ARGS, 0, 0)    :- $id$_sorting_network_input_number(ARGS, _).
+	$id$_sum(ARGS, I, S)    :- $id$_sum(ARGS, I1, S), I1 = I-1, $id$_span(ARGS, I).
+	$id$_sum(ARGS, I, S1)   :- $id$_sum(ARGS, I1, S), S1 = S+1, I1 = I-1, $id$_sorting_network_input_number(ARGS, I), $bound$(ARGS, K), S < K.
+	$result_predicate$(ARGS, K) :- $bound$(ARGS, K), K <= S, $id$_sum(ARGS, _, S).
+>>
+
+/**
+ * Core (i.e. input-independent) part of an ASP encoding for aggregate literals of form "X <= #sum{...}".
+ * For an aggregate literal of form "K <= #sum{ N : p(N); N : q(N)}", an encoding needs to provide rules that map each aggregate element
+ * to ground instances of a candidate predicate "$candidate$/3" where the first argument is a funtion term wrapping global variables of the
+ * original aggregate literal, the second an (enumeration-)index of the tuple in question, and the third term the value to sum up.
+ * E.g. "summated_value(ARGS, IDX, VAL) :- element_tuple(ARGS, tuple(X), VAL), _Enumeration(ARGS, tuple(X), IDX).",
+ * where "element_tuple" could be defined as "element_tuple(ARGS, tuple(VAL), VAL) :- p(VAL)".
+ * Furthermore, code using this encoding needs to provide a rules deriving a "bound" predicate that works as an upper bound for the summation program,
+ * i.e. binds the variable that is compared with the aggregate. When rewriting rules, the body of the bound rule should hold all literals binding
+ * any variables on which the original aggregate literal depends, e.g. "bound(ARGS, K) :- atom_binding_k(K), something_binding_args(ARGS)."
+ *
+ * The rules deriving the aggregate result predicate in this encoding fire if and only if the original aggregate literal is true.
+ */
+sum_le (id, result_predicate, element_tuple, bound )::=<<
+	#enumeration_predicate_is enum.
+	$! We have found a result when either the bound is LEQ zero or we have a candidate that, added to an intermediate sum exceeds the bound !$
+	$result_predicate$(ARGS, K) :- $bound$(ARGS, K), K <= 0.
+	$result_predicate$(ARGS, K) :- $id$_partial_sum_at_index(ARGS, S, I1), I1 = I - 1, $id$_input_value_at_index(ARGS, F, I), $bound$(ARGS, K), K <= S + F.
+
+	$id$_input_value_at_index(ARGS, VAL, IDX) :- $element_tuple$(ARGS, TPL, VAL), enum(ARGS, TPL, IDX).
+
+	$! Calculate intermediate sums. Each tuple can be true or false, i.e. contribute zero or its value to the sum. !$
+	$id$_interesting_index(ARGS, I1) :- $id$_input_value_at_index(ARGS, _, I), I1 = I - 1.
+	$id$_interesting_index(ARGS, Im1) :- Im1 = I-1, I > 1, $id$_interesting_index(ARGS, I).
+	$id$_partial_sum_at_index(ARGS, 0, 0) :- $id$_input_value_at_index(ARGS, _, _).
+	$id$_partial_sum_at_index(ARGS, S, I) :- $id$_partial_sum_at_index(ARGS, S, I1), I1 = I - 1, $id$_interesting_index(ARGS, I).
+	$id$_partial_sum_at_index(ARGS, SF, I) :- $id$_partial_sum_at_index(ARGS, S, I1), I1 = I - 1, SF = S + F, $id$_input_value_at_index(ARGS, F, I), $bound$(ARGS, K), SF < K.
+>>
+
+/**
+ * The core (i.e. input-independent) part of an ASP encoding for an aggregate literal of the form "X = #sum{...}".
+ * Arguments:
+ * - id: a unique identifier of the aggregate literal to encode.
+ * - result_predicate: the name of the predicate that is used to replace the rewritten aggregate in the input program.
+ *   Must be unique to each encoded literal (ideally contains the aggregate's id).
+ * - element_tuple: The predicate name used for tuples over which this encoding aggregates over.
+ *   Must be unique to each encoded literal (ideally contains the aggregate's id).
+ * - bound: The predicate name used for the "bound" in the encoding.
+ *   Note that in this case the value of the bound is not of interest, and it is purely used as a fallback in order to be able
+ *   to derive a count of zero when counting an empty set and no other rule can fire.
+ *
+ * Callers must ensure that rules deriving element tuples and bounds used by this encoding are in place.
+ **/
+sum_eq (id, result_predicate, element_tuple, bound )::=<<
+	#enumeration_predicate_is enum.
+
+	$! The first term of each aggregate element goes into the sum !$
+	$id$_input_value_at_index(ARGS, VAL, IDX) :- $element_tuple$(ARGS, TPL, VAL), enum(ARGS, TPL, IDX).
+
+	$! Calculate intermediate sums. Each tuple can be true or false, i.e. contribute zero or its value to the sum. !$
+	$id$_interesting_index(ARGS, I1) :- $id$_input_value_at_index(ARGS, _, I), I1 = I - 1.
+	$id$_interesting_index(ARGS, Im1) :- Im1 = I-1, I > 1, $id$_interesting_index(ARGS, I).
+	$id$_partial_sum_at_index(ARGS, 0, 0) :- $id$_input_value_at_index(ARGS, _, _).
+	$id$_partial_sum_at_index(ARGS, S, I) :- $id$_partial_sum_at_index(ARGS, S, I1), I1 = I - 1, $id$_interesting_index(ARGS, I).
+	$id$_partial_sum_at_index(ARGS, SF, I) :- $id$_partial_sum_at_index(ARGS, S, I1), I1 = I - 1, SF = S + F, $id$_input_value_at_index(ARGS, F, I).
+
+	$!Fallback rule - even if no element tuple exists, the sum is still zero!$
+	$id$_partial_sum_at_index(ARGS, 0, 0) :- $bound$(ARGS, _).
+
+	$! Now find the maximum partial sum, which is the real sum !$
+	$id$_partial_sum_less_than(ARGS, LESS, THAN) :- $id$_partial_sum_at_index(ARGS, LESS, _), $id$_partial_sum_at_index(ARGS, THAN, _), LESS < THAN.
+	$id$_partial_sum_has_greater(ARGS, P_SUM) :- $id$_partial_sum_less_than(ARGS, P_SUM, _).
+	$result_predicate$(ARGS, SUM) :- $id$_partial_sum_at_index(ARGS, SUM, _), not $id$_partial_sum_has_greater(ARGS, SUM).
+>>

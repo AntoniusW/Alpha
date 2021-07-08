@@ -208,7 +208,7 @@ public class ParserTest {
 		AggregateAtom.AggregateElement aggregateElement = new AggregateAtom.AggregateElement(basicTerms,
 				Collections.singletonList(new BasicAtom(Predicate.getInstance("p", 3), x, y, z).toLiteral()));
 		AggregateAtom expectedAggregate = new AggregateAtom(ComparisonOperator.LE, VariableTerm.getInstance("K"), null, null,
-				AggregateAtom.AGGREGATEFUNCTION.COUNT, Collections.singletonList(aggregateElement));
+				AggregateAtom.AggregateFunctionSymbol.COUNT, Collections.singletonList(aggregateElement));
 		assertEquals(expectedAggregate, parsedAggregate.getAtom());
 	}
 

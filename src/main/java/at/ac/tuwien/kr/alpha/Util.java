@@ -27,8 +27,13 @@
  */
 package at.ac.tuwien.kr.alpha;
 
+import org.stringtemplate.v4.ST;
+import org.stringtemplate.v4.STGroup;
+import org.stringtemplate.v4.STGroupFile;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.StandardCharsets;
@@ -116,6 +121,29 @@ public class Util {
 	public static int arrayGrowthSize(int oldSize) {
 		// Growth factor is 1.5.
 		return oldSize + (oldSize >> 1);
+	}
+
+	/**
+	 * Creates a stringtemplate (see {@link ST}) intended for rendering to ASP code from a given string.
+	 * The template uses "$" as attribute delimiter.
+	 * 
+	 * @param template the template string
+	 * @return an ST that is initialized with the given template string
+	 */
+	public static ST aspStringTemplate(String template) {
+		return new ST(template, '$', '$');
+	}
+
+	/**
+	 * Loads a stringtemplate group intended for rendering ASP code from a file.
+	 * Templates are assumed to use "$" as attribute delimiter.
+	 * 
+	 * @param classPathUrl
+	 * @return
+	 */
+	public static STGroup loadStringTemplateGroup(URL url) {
+		STGroupFile groupFile = new STGroupFile(url, "UTF-8", '$', '$');
+		return groupFile;
 	}
 	
 }

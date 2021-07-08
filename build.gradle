@@ -14,6 +14,8 @@ targetCompatibility = 1.8
 mainClassName = 'at.ac.tuwien.kr.alpha.Main'
 
 def antlrVersion = '4.7'
+// Keep this in sync with antlr version to avoid multiple versions in classpath
+def stringtemplateVersion = "4.0.8"
 
 repositories {
 	mavenCentral()
@@ -46,6 +48,7 @@ dependencies {
 	implementation group: 'org.reflections',    name: 'reflections',          version: '0.9.11'
 	implementation group: 'org.apache.poi',     name: 'poi',                  version: '4.1.1'
 	implementation group: 'org.apache.poi',     name: 'poi-ooxml',            version: '4.1.1'
+	implementation group: 'org.antlr',          name: 'ST4',                  version: '${stringtemplateVersion}$'
 
 	testImplementation group: 'junit', name: 'junit', version: '4.12'
 }

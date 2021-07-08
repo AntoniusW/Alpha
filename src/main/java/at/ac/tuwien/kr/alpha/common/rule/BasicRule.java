@@ -27,19 +27,30 @@
  */
 package at.ac.tuwien.kr.alpha.common.rule;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import at.ac.tuwien.kr.alpha.common.atoms.Literal;
 import at.ac.tuwien.kr.alpha.common.rule.head.Head;
 
 /**
- * Represents a non-ground rule or a constraint. A @{link BasicRule} has a general {@link Head}, meaning both choice heads and disjunctive heads are permissible.
- * This implementation represents a rule after being parsed from a given ASP program, but before being transformed into a @{link NormalRule}.
+ * Represents a non-ground rule or a constraint. A @{link BasicRule} has a general {@link Head}, meaning both choice
+ * heads and disjunctive heads are permissible.
+ * This implementation represents a rule after being parsed from a given ASP program, but before being transformed into
+ * a @{link NormalRule}.
  */
 public class BasicRule extends AbstractRule<Head> {
 
 	public BasicRule(Head head, List<Literal> body) {
 		super(head, body);
+	}
+
+	public static BasicRule getInstance(Head head, Literal... body) {
+		List<Literal> bodyLst = new ArrayList<>();
+		for (Literal lit : body) {
+			bodyLst.add(lit);
+		}
+		return new BasicRule(head, bodyLst);
 	}
 
 }

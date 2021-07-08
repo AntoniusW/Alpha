@@ -1,23 +1,31 @@
 package at.ac.tuwien.kr.alpha.test.util;
 
-import at.ac.tuwien.kr.alpha.AnswerSetsParser;
-import at.ac.tuwien.kr.alpha.common.AnswerSet;
-import at.ac.tuwien.kr.alpha.common.Predicate;
-import at.ac.tuwien.kr.alpha.common.atoms.Atom;
-import at.ac.tuwien.kr.alpha.common.atoms.BasicAtom;
-import at.ac.tuwien.kr.alpha.common.program.AbstractProgram;
-import at.ac.tuwien.kr.alpha.common.terms.ConstantTerm;
-import at.ac.tuwien.kr.alpha.common.terms.Term;
+import static java.util.Collections.emptySet;
+
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.StringJoiner;
+import java.util.stream.Collectors;
 
-import static java.util.Collections.emptySet;
+import at.ac.tuwien.kr.alpha.common.AnswerSet;
+import at.ac.tuwien.kr.alpha.common.AtomStore;
+import at.ac.tuwien.kr.alpha.common.NoGood;
+import at.ac.tuwien.kr.alpha.common.Predicate;
+import at.ac.tuwien.kr.alpha.common.atoms.Atom;
+import at.ac.tuwien.kr.alpha.common.atoms.BasicAtom;
+import at.ac.tuwien.kr.alpha.common.program.AbstractProgram;
+import at.ac.tuwien.kr.alpha.common.program.InputProgram;
+import at.ac.tuwien.kr.alpha.common.rule.BasicRule;
+import at.ac.tuwien.kr.alpha.common.terms.ConstantTerm;
+import at.ac.tuwien.kr.alpha.common.terms.Term;
+import at.ac.tuwien.kr.alpha.common.terms.VariableTerm;
 
 public class TestUtils {
 
@@ -93,6 +101,40 @@ public class TestUtils {
 			trms.add(ConstantTerm.getSymbolicInstance(str));
 		}
 		return new BasicAtom(pred, trms);
+	}
+
+	public static Atom atom(String predicateName, String... termStrings) {
+		Term[] terms = new Term[termStrings.length];
+		for (int i = 0; i < termStrings.length; i++) {
+			String termString = termStrings[i];
+			if (StringUtils.isAllUpperCase(termString.substring(0, 1))) {
+				terms[i] = VariableTerm.getInstance(termString);
+			} else {
+				terms[i] = ConstantTerm.getInstance(termString);
+			}
+		}
+		return new BasicAtom(Predicate.getInstance(predicateName, terms.length), terms);
+	}
+
+	public static Atom atom(String predicateName, int... termInts) {
+		Term[] terms = new Term[termInts.length];
+		for (int i = 0; i < termInts.length; i++) {
+			terms[i] = ConstantTerm.getInstance(termInts[i]);
+		}
+		return new BasicAtom(Predicate.getInstance(predicateName, terms.length), terms);
+	}
+
+	public static void printNoGoods(AtomStore atomStore, Collection<NoGood> noGoods) {
+		System.out.println(noGoods.stream().map(atomStore::noGoodToString).collect(Collectors.toSet()));
+	}
+
+	public static void assertProgramContainsRule(InputProgram prog, BasicRule containedRule) {
+		for (BasicRule rule : prog.getRules()) {
+			if (rule.equals(containedRule)) {
+				return;
+			}
+		}
+		Assert.fail("Program should contain rule, but does not! (rule = " + containedRule + ")");
 	}
 
 }
