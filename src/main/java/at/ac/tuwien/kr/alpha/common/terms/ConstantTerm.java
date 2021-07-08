@@ -151,4 +151,8 @@ public class ConstantTerm<T extends Comparable<T>> extends Term {
 	public T getObject() {
 		return object;
 	}
+
+	public boolean isSymbolic() {
+		return this.symbolic;
+	}
 }

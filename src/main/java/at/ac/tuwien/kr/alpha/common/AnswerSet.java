@@ -1,9 +1,11 @@
 package at.ac.tuwien.kr.alpha.common;
 
-import at.ac.tuwien.kr.alpha.Util;
-import at.ac.tuwien.kr.alpha.common.atoms.Atom;
-
+import java.util.List;
 import java.util.SortedSet;
+
+import at.ac.tuwien.kr.alpha.Util;
+import at.ac.tuwien.kr.alpha.api.query.AnswerSetQuery;
+import at.ac.tuwien.kr.alpha.common.atoms.Atom;
 
 public interface AnswerSet extends Comparable<AnswerSet> {
 	SortedSet<Predicate> getPredicates();
@@ -30,5 +32,15 @@ public interface AnswerSet extends Comparable<AnswerSet> {
 		}
 
 		return 0;
+	}
+
+	/**
+	 * Applies a given {@link AnswerSetQuery} to this AnswerSet.
+	 * 
+	 * @param query the query to apply
+	 * @return all atoms that are instances of the predicate specified by the query and meet the filters of the query
+	 */
+	default List<Atom> query(AnswerSetQuery query) {
+		return query.applyTo(this);
 	}
 }
